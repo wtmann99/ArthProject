@@ -71,6 +71,14 @@ TrueHerb<-left_join(HCompall, Converted, by="Plot") %>%
   group_by(Plot, Species, Treatment_Year) %>%
   ungroup()
 
+HerbDam<-HCompall %>%
+  # summarise(Plot, Species, Treatment_Year, HerbType, avgherb, Year, Treatment) %>%
+  group_by(Block, Plot, Species, Year, Treatment, Treatment_Year) %>%
+  summarize(totaldam= sum(HerbPerc))%>%
+  ungroup() %>%
+  select(Block, Plot, Species,Year, Treatment,totaldam)
+
+
 #### True Damage ####
 TrueDamage<-left_join(HerbDam, Converted, by=c("Plot","Treatment"))
 
@@ -125,18 +133,16 @@ TrueDamLiatris<-TrueDam %>%
   filter(Drought!="D")
 
 
-TrueHerbDam<-TrueHerb %>%
-  summarise(Block, Plot, Species, Treatment_Year, HerbType, avgherb, Year, Nitrogen, Phosphorous, Potassium, Drought) %>%
-  group_by(Plot, Species, Treatment_Year) %>%
-  mutate(Damage= sum(avgherb))%>%
-  ungroup() %>%
-  mutate(totaldam=Damage) %>%
-  select(Block, Plot, Species, Treatment_Year, avgherb, totaldam, Year, Nitrogen, Phosphorous, Potassium, Drought, HerbType)
-
 
 TrueHDamTest<-lmerTest::lmer(data=TrueDamage, totaldam~Nitrogen*Phosphorous*Potassium*Year*Species+ (1|Block))
 TrueHDamTest
 anova(TrueHDamTest, type=3)
+
+TrueHDamDroughtTest<-lmerTest::lmer(data=TrueDamage, totaldam~Nitrogen*Phosphorous*Potassium*Drought*Year*Species+ (1|Block))
+TrueHDamDroughtTest
+anova(TrueHDamDroughtTest, type=3)
+
+
 
 #####TRUE DAM SPECIES GRAPHS ####
 
