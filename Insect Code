@@ -1,4 +1,4 @@
-setwd("~/WillMfiles/Koerner Lab/Koerner Lab/R Studio files/Grad Research")
+wd("~/WillMfiles/Koerner Lab/Koerner Lab/R Studio files/Grad Research")
 library(tidyverse)
 
 VacInsect_2021 <- read.csv("D-Vac LLP Insect ID (2021).csv")
@@ -304,10 +304,34 @@ TP3Herb22Stretch <- TP3Herb22Stretch %>%
 
 
 
+Herb23<-read.csv("Mann_Leaf_Damage_2023.csv", na.strings = "")%>%
+  mutate(Year="23")
+
+
+Herb23Stretch<- Herb23 %>%
+  select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
+  drop_na(Plot) %>%
+  group_by(Block, Plot, Treatment, Replicate, Species) %>%
+  gather(HerbType, HerbPerc,6:11)%>%
+  ungroup() %>%
+  drop_na(HerbPerc) %>%
+  filter(HerbType==c("Chew","Mine.Suck")) %>%
+  select(-Timepoint..1.2.3.) %>%
+  filter(HerbPerc!="_")
+
+Herb23Stretch <- Herb23Stretch %>%  
+  mutate(HerbPerc = as.numeric(HerbPerc))
+
+
+
+
 
 Stretch22<-full_join(Peak22Stretch, TP1Herb22Stretch)
 
 Stretchall22<-full_join(Stretch22, TP3Herb22Stretch)
+
+Stretch2223<-full_join(Stretchall22, Herb23Stretch)
+
 
 HerbComp22<-left_join(PeakHerb22, TP1Herb22)
 HerbComp22Stretch<- HerbComp22 %>%
@@ -349,7 +373,7 @@ HCompall<-full_join(HComp2020_21, Peak22Stretch) %>%
 
 
 
-HCompallEarly<-full_join(HComp2020_21, Stretchall22) %>%
+HCompallYears<-full_join(HComp2020_21, Stretch2223) %>%
   filter(HerbType==c("Chew","Mine.Suck")) %>%
   group_by(Block, Plot, Treatment, Species, HerbType, Year) %>%
   ungroup() %>%
@@ -394,7 +418,7 @@ HerbDam<-HCompall %>%
   ungroup() %>%
   select(Block, Plot, Species,Year, Treatment,totaldam)
 
-HerbDamEarly<-HCompallEarly %>%
+HerbDamyears<-HCompallYears %>%
   # summarise(Plot, Species, Treatment_Year, HerbType, avgherb, Year, Treatment) %>%
   group_by(Block, Plot, Species, Year, Treatment, Treatment_Year) %>%
   summarize(totaldam= sum(HerbPerc))%>%
@@ -738,8 +762,8 @@ HerbDamage <- ggplot(data = HerbDam, aes(x = Treatment, y = totaldam, fill=Year)
 HerbDamage
 
 
-HerbDamage20to22 <- ggplot(data = HerbDamEarly, aes(x = Treatment, y = totaldam, fill=Year)) + geom_bar(stat = "identity") + facet_grid(~ Year, scales = "free")
-HerbDamage20to22
+HerbDamageYears <- ggplot(data = HerbDamyears, aes(x = Treatment, y = totaldam, fill=Year)) + geom_bar(stat = "identity") + facet_grid(~ Year, scales = "free")
+HerbDamageYears
 
 
 DroughtHerbDamage <- ggplot(data = TrueHerbDam, aes(x = Year, y = DDamage, fill=Drought)) + geom_bar(stat = "identity")
