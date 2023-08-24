@@ -1,7 +1,7 @@
 setwd("C:/Users/wtmann/Documents/WillMfiles/Koerner Lab/Koerner Lab/R Studio files/Grad Research") #Or whatever the local branch is
 library(tidyverse)
 
-
+####2020 Herbivory####
 Herb20<-read.csv("Entered Sandhills Leaf Damage Data_2020.csv", na.strings = "") %>%
   mutate(Year="20")
 
@@ -18,6 +18,7 @@ Herb20Stretch<- Herb20 %>%
   filter(HerbType==c("Chew","Mine.Suck"))
 
 
+####2021 Herbivory####
 Herb21<-read.csv("Entered Sandhills Leaf Damage Data_2021.csv", na.strings = "") %>%
   mutate(Year="21")
 
@@ -32,9 +33,28 @@ Herb21Stretch<- Herb21 %>%
   rename(Replicate=Rep)
 
 
-PeakHerb22<-read.csv("Mann_Leaf_Damage_2022.csv", na.strings = "") %>%
-  filter(Timepoint=="2") %>%
-  mutate(Year="22")
+####2022 Herbivory####
+TP1Herb22<-read.csv("Mann_Damage2022.csv", na.strings = "")%>%
+  filter(Timepoint..1.2.3.=="1")
+
+TP1Herb22Stretch<- TP1Herb22 %>%
+  select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
+  drop_na(Plot) %>%
+  group_by(Block, Plot, Treatment, Replicate, Species) %>%
+  gather(HerbType, HerbPerc,6:11)%>%
+  ungroup() %>%
+  drop_na(HerbPerc) %>%
+  mutate(Year="22-TP1") %>%
+  filter(HerbType==c("Chew","Mine.Suck"))%>%
+  filter(HerbPerc!="_")
+
+TP1Herb22Stretch <- TP1Herb22Stretch %>%  
+  mutate(HerbPerc = as.numeric(HerbPerc))
+
+
+PeakHerb22<-read.csv("Mann_Damage2022.csv", na.strings = "") %>%
+  filter(Timepoint..1.2.3.=="2")%>%
+  mutate(Year="22-TP2")
 
 Peak22Stretch<- PeakHerb22 %>%
   select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
@@ -44,13 +64,64 @@ Peak22Stretch<- PeakHerb22 %>%
   ungroup() %>%
   drop_na(HerbPerc) %>%
   filter(HerbType==c("Chew","Mine.Suck")) %>%
-  select(-Timepoint)
+  select(-Timepoint..1.2.3.) %>%
+  filter(HerbPerc!="_")
 
 Peak22Stretch <- Peak22Stretch %>%  
   mutate(HerbPerc = as.numeric(HerbPerc))
 
+TP3Herb22<-read.csv("Mann_Damage2022.csv", na.strings = "")%>%
+  filter(Timepoint..1.2.3.=="3")%>%
+  mutate(Year="22")
+
+TP3Herb22Stretch<- TP1Herb22 %>%
+  select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
+  drop_na(Plot) %>%
+  group_by(Block, Plot, Treatment, Replicate, Species) %>%
+  gather(HerbType, HerbPerc,6:11)%>%
+  ungroup() %>%
+  drop_na(HerbPerc) %>%
+  mutate(Year="22-TP3") %>%
+  filter(HerbType==c("Chew","Mine.Suck")) %>%
+  filter(HerbPerc!="_")
+
+TP3Herb22Stretch <- TP3Herb22Stretch %>%  
+  mutate(HerbPerc = as.numeric(HerbPerc))
+
+
+####2023 Herbivory####
+Herb23<-read.csv("Mann_Leaf_Damage_2023.csv", na.strings = "")%>%
+  mutate(Year="23")
+
+
+Herb23Stretch<- Herb23 %>%
+  select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
+  drop_na(Plot) %>%
+  group_by(Block, Plot, Treatment, Replicate, Species) %>%
+  gather(HerbType, HerbPerc,6:11)%>%
+  ungroup() %>%
+  drop_na(HerbPerc) %>%
+  filter(HerbType==c("Chew","Mine.Suck")) %>%
+  select(-Timepoint..1.2.3.) %>%
+  filter(HerbPerc!="_")
+
+Herb23Stretch <- Herb23Stretch %>%  
+  mutate(HerbPerc = as.numeric(HerbPerc))
+
+
+
+
+
+Stretch22<-full_join(Peak22Stretch, TP1Herb22Stretch)
+
+Stretchall22<-full_join(Stretch22, TP3Herb22Stretch)
+
+Stretch2223<-full_join(Stretchall22, Herb23Stretch)
+
 
 HComp2020_21<- full_join(Herb20Stretch, Herb21Stretch)
+
+
 
 HCompall<-full_join(HComp2020_21, Peak22Stretch) %>%
   filter(HerbType==c("Chew","Mine.Suck")) %>%
@@ -62,6 +133,17 @@ HCompall<-full_join(HComp2020_21, Peak22Stretch) %>%
   mutate(Treatment_Year=paste(Treatment, Year, sep="_"))
 
 
+HCompallYears<-full_join(HComp2020_21, Stretch2223) %>%
+  filter(HerbType==c("Chew","Mine.Suck")) %>%
+  group_by(Block, Plot, Treatment, Species, HerbType, Year) %>%
+  ungroup() %>%
+  filter(Species!="Chrysopsis_mariana")%>%
+  filter(Species!="Lespedeza_hirta") %>%
+  filter(Species!="Dichanthelium_commutatum") %>%
+  mutate(Treatment_Year=paste(Treatment, Year, sep="_"))
+
+
+####HerbDam####
 Converted<-read.csv("ConvertedTreat.csv")
 
 TrueHerb<-left_join(HCompall, Converted, by="Plot") %>%
@@ -77,6 +159,23 @@ HerbDam<-HCompall %>%
   summarize(totaldam= sum(HerbPerc))%>%
   ungroup() %>%
   select(Block, Plot, Species,Year, Treatment,totaldam)
+
+HerbDamyears<-HCompallYears %>%
+  # summarise(Plot, Species, Treatment_Year, HerbType, avgherb, Year, Treatment) %>%
+  group_by(Block, Plot, Species, Year, Treatment, Treatment_Year) %>%
+  summarize(totaldam= sum(HerbPerc))%>%
+  ungroup() %>%
+  select(Block, Plot, Species,Year, Treatment,totaldam)
+
+####Totaldam Figures####
+
+#Total Arthropod Herbivory damage across all years and species
+HerbDamage <- ggplot(data = HerbDam, aes(x = Treatment, y = totaldam, fill=Year)) + geom_bar(stat = "identity") + facet_grid(~ Year, scales = "free")
+HerbDamage
+
+
+HerbDamageYears <- ggplot(data = HerbDamyears, aes(x = Treatment, y = totaldam, fill=Year)) + geom_bar(stat = "identity") + facet_grid(~ Year, scales = "free")
+HerbDamageYears
 
 
 #### True Damage ####
