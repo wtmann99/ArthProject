@@ -1,11 +1,5 @@
-
-setwd("D:/School Stuff/Graduate Stuff/Koerner Lab/R Studio files/Grad Research")
-  library(tidyverse)
-
-git remote add origin https://github.com/wtmann99/ArthProject.git
-git branch -M main
-git push -u origin main
-
+setwd("~/WillMfiles/Koerner Lab/Koerner Lab/R Studio files/Grad Research")
+library(tidyverse)
 
 VacInsect_2021 <- read.csv("D-Vac LLP Insect ID (2021).csv")
 VacInsect_2020 <- read.csv("D-Vac LLP Insect ID (2020).csv")
@@ -139,11 +133,11 @@ Vac_20to21Ord<-full_join(Vac_20Ord, Vac_21Ord) %>%
   mutate(Block= ifelse(Plot %in% c(11:20), "2", Block)) %>%
   mutate(Block=ifelse(Plot %in% c(21:30), "3", Block))
 
-  
 
- 
-  
-  filter(Order!="Body parts") %>%
+
+
+
+filter(Order!="Body parts") %>%
   filter(Order!="Body Parts") %>%
   filter(Treatment!='C/Shelter') %>%
   filter(Treatment!='NPK+/Shelter')
@@ -205,7 +199,7 @@ Herb20Div<- Herb20 %>%
   group_by(Treatment_Year) %>%
   mutate(Totalherb=sum(HerbPerc)) %>%
   ungroup()
- 
+
 
 HerbCon20<- Herb20Stretch %>%
   filter(Treatment==c("C", "NPK")) %>%
@@ -249,8 +243,8 @@ HerbCon21<- Herb21Stretch %>%
   mutate(Treatment_Year=paste(Treatment, Year, sep="_"))
 
 
-TP1Herb22<-read.csv("Mann_Leaf_Damage_Sandhill_Gamelands_2022.csv", na.strings = "") %>%
-  select(-'Vert')
+TP1Herb22<-read.csv("Mann_Damage2022.csv", na.strings = "")%>%
+  filter(Timepoint..1.2.3.=="1")
 
 TP1Herb22Stretch<- TP1Herb22 %>%
   select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
@@ -259,8 +253,12 @@ TP1Herb22Stretch<- TP1Herb22 %>%
   gather(HerbType, HerbPerc,6:11)%>%
   ungroup() %>%
   drop_na(HerbPerc) %>%
-  mutate(Year="TP1") %>%
-  filter(HerbType==c("Chew","Mine.Suck"))
+  mutate(Year="22-TP1") %>%
+  filter(HerbType==c("Chew","Mine.Suck"))%>%
+  filter(HerbPerc!="_")
+
+TP1Herb22Stretch <- TP1Herb22Stretch %>%  
+  mutate(HerbPerc = as.numeric(HerbPerc))
 
 TP1HerbCon22<- TP1Herb22Stretch %>%
   filter(Treatment==c("C", "NPK")) %>%
@@ -268,9 +266,9 @@ TP1HerbCon22<- TP1Herb22Stretch %>%
   mutate(Treatment_Year=paste(Treatment, Year, sep="_"))
 
 
-PeakHerb22<-read.csv("Mann_Leaf_Damage_2022.csv", na.strings = "") %>%
-  filter(Timepoint=="2") %>%
-  mutate(Year="22")
+PeakHerb22<-read.csv("Mann_Damage2022.csv", na.strings = "") %>%
+  filter(Timepoint..1.2.3.=="2")%>%
+  mutate(Year="22-TP2")
 
 Peak22Stretch<- PeakHerb22 %>%
   select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
@@ -280,13 +278,36 @@ Peak22Stretch<- PeakHerb22 %>%
   ungroup() %>%
   drop_na(HerbPerc) %>%
   filter(HerbType==c("Chew","Mine.Suck")) %>%
-  select(-Timepoint)
+  select(-Timepoint..1.2.3.) %>%
+  filter(HerbPerc!="_")
 
 Peak22Stretch <- Peak22Stretch %>%  
   mutate(HerbPerc = as.numeric(HerbPerc))
 
+TP3Herb22<-read.csv("Mann_Damage2022.csv", na.strings = "")%>%
+  filter(Timepoint..1.2.3.=="3")%>%
+  mutate(Year="22")
+
+TP3Herb22Stretch<- TP1Herb22 %>%
+  select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
+  drop_na(Plot) %>%
+  group_by(Block, Plot, Treatment, Replicate, Species) %>%
+  gather(HerbType, HerbPerc,6:11)%>%
+  ungroup() %>%
+  drop_na(HerbPerc) %>%
+  mutate(Year="22-TP3") %>%
+  filter(HerbType==c("Chew","Mine.Suck")) %>%
+  filter(HerbPerc!="_")
+
+TP3Herb22Stretch <- TP3Herb22Stretch %>%  
+  mutate(HerbPerc = as.numeric(HerbPerc))
 
 
+
+
+Stretch22<-full_join(Peak22Stretch, TP1Herb22Stretch)
+
+Stretchall22<-full_join(Stretch22, TP3Herb22Stretch)
 
 HerbComp22<-left_join(PeakHerb22, TP1Herb22)
 HerbComp22Stretch<- HerbComp22 %>%
@@ -327,10 +348,20 @@ HCompall<-full_join(HComp2020_21, Peak22Stretch) %>%
   mutate(Treatment_Year=paste(Treatment, Year, sep="_"))
 
 
+
+HCompallEarly<-full_join(HComp2020_21, Stretchall22) %>%
+  filter(HerbType==c("Chew","Mine.Suck")) %>%
+  group_by(Block, Plot, Treatment, Species, HerbType, Year) %>%
+  ungroup() %>%
+  filter(Species!="Chrysopsis_mariana")%>%
+  filter(Species!="Lespedeza_hirta") %>%
+  filter(Species!="Dichanthelium_commutatum") %>%
+  mutate(Treatment_Year=paste(Treatment, Year, sep="_"))
+
 PCall<-left_join(Herb21Stretch, Peak22H)
 
 
-  filter(HerbType==c("Chew","Mine.Suck")) %>%
+filter(HerbType==c("Chew","Mine.Suck")) %>%
   group_by(Block, Plot, Treatment, Species, HerbType, Year) %>%
   ungroup() %>%
   filter(Species!="Chrysopsis_mariana")%>%
@@ -357,7 +388,14 @@ HCom2<-full_join(HComp2020_21, TP1Herb22Stretch) %>%
 ####HerbDam####
 
 HerbDam<-HCompall %>%
- # summarise(Plot, Species, Treatment_Year, HerbType, avgherb, Year, Treatment) %>%
+  # summarise(Plot, Species, Treatment_Year, HerbType, avgherb, Year, Treatment) %>%
+  group_by(Block, Plot, Species, Year, Treatment, Treatment_Year) %>%
+  summarize(totaldam= sum(HerbPerc))%>%
+  ungroup() %>%
+  select(Block, Plot, Species,Year, Treatment,totaldam)
+
+HerbDamEarly<-HCompallEarly %>%
+  # summarise(Plot, Species, Treatment_Year, HerbType, avgherb, Year, Treatment) %>%
   group_by(Block, Plot, Species, Year, Treatment, Treatment_Year) %>%
   summarize(totaldam= sum(HerbPerc))%>%
   ungroup() %>%
@@ -369,11 +407,11 @@ HerbDam<-HCompall %>%
 TrueDamage<-left_join(HerbDam, Converted, by=c("Plot","Treatment"))
 
 TrueDamageCopy1<- aggregate(totaldam ~ Nitrogen + Year +Species,       # Aggregate data
-    TrueDamage,FUN=sum) %>%
+                            TrueDamage,FUN=sum) %>%
   rename(Npresence=totaldam)
-  
+
 TrueDamageCopy2<- aggregate(totaldam ~ Potassium + Year + Species,       # Aggregate data
-                           TrueDamage,FUN=sum) %>%
+                            TrueDamage,FUN=sum) %>%
   rename(Kpresence=totaldam)
 
 TrueDamageCopy3<- aggregate(totaldam ~ Phosphorous + Year + Species,       # Aggregate data
@@ -400,7 +438,7 @@ TrueDamage1<-left_join(TrueDamage, Yeardam, by="Year")
 
 TrueDam<-left_join(TrueDamage1, TrueDamageCopy, by=c("Year", "Species", "Nitrogen", "Phosphorous","Potassium","Drought")) %>%
   filter(Drought!="D")
-  
+
 
 TrueDamAristida<-TrueDam %>%
   filter(Species=="Aristida_stricta") %>%
@@ -434,11 +472,11 @@ TrueHerbDam<-TrueHerb %>%
   mutate(totaldam=Damage) %>%
   select(Block, Plot, Species, Treatment_Year, avgherb, totaldam, Year, Nitrogen, Phosphorous, Potassium, Drought, HerbType)
 
-  mutate(DDamage = ifelse(Drought %in% "D", avgherb, Drought)) %>%
+mutate(DDamage = ifelse(Drought %in% "D", avgherb, Drought)) %>%
   mutate(DDamage = ifelse(Drought %in% "C", avgherb, Drought))
 
-  mutate(Block= ifelse(Plot %in% c(11:20), "2", Block))
-  mutate(Block=ifelse(Plot %in% c(21:30), "3", Block))
+mutate(Block= ifelse(Plot %in% c(11:20), "2", Block))
+mutate(Block=ifelse(Plot %in% c(21:30), "3", Block))
 
 
 
@@ -528,7 +566,7 @@ TrueHerb<-left_join(HCompall, Converted, by="Plot") %>%
 
 
 
-TrueHDamTest<-lmerTest::lmer(data=TrueDamage, totaldam~Nitrogen*Phosphorous*Potassium*Year*Species+ (1|Block))
+TrueHDamTest<-lmerTest::lmer(data=TrueDamage, totaldam~Nitrogen*Phosphorous*Potassium*Drought*Year*Species+ (1|Block))
 TrueHDamTest
 
 anova(TrueHDamTest, type=3)
@@ -567,7 +605,6 @@ NYLiatris
 PhYears<-ggplot(data=TrueDam, aes(x=Year, y=Phpresence, color=Phosphorous, group=2)) +
   geom_point() + labs(title="Herbivory in the presence of P")
 PhYears
-
 PhAristida<-ggplot(data=TrueDamAristida, aes(x=Year, y=Phpresence, color=Phosphorous, group=2)) +
   geom_point() + labs(title="Herbivory of Aristida stricta in the presence of P")
 PhAristida
@@ -700,6 +737,9 @@ geom_errorbar(aes(ymin = avgins - seins, ymax = avgins + seins), width=.2, posit
 HerbDamage <- ggplot(data = HerbDam, aes(x = Treatment, y = totaldam, fill=Year)) + geom_bar(stat = "identity") + facet_grid(~ Year, scales = "free")
 HerbDamage
 
+
+HerbDamage20to22 <- ggplot(data = HerbDamEarly, aes(x = Treatment, y = totaldam, fill=Year)) + geom_bar(stat = "identity") + facet_grid(~ Year, scales = "free")
+HerbDamage20to22
 
 
 DroughtHerbDamage <- ggplot(data = TrueHerbDam, aes(x = Year, y = DDamage, fill=Drought)) + geom_bar(stat = "identity")
@@ -930,7 +970,7 @@ AIC(AntsYearTreat)
 ####Plant Community Data (Alyssa) and figures (Rachel V) ####
 
 OldPComm21<-read.csv("Dominant Species List 2021 (2).csv") %>%
- mutate(Treatment = ifelse(Plot %in% c("1", "11", "28"), 'NP', Plot)) %>%
+  mutate(Treatment = ifelse(Plot %in% c("1", "11", "28"), 'NP', Plot)) %>%
   mutate(Treatment = ifelse(Plot %in% c("2", "19", "21"), 'PK', Treatment)) %>%
   mutate(Treatment = ifelse(Plot %in% c("3", "20", "27"), 'C+Shel', Treatment)) %>%
   mutate(Treatment = ifelse(Plot %in% c("4", "17", "25"), 'K', Treatment)) %>%
@@ -940,11 +980,11 @@ OldPComm21<-read.csv("Dominant Species List 2021 (2).csv") %>%
   mutate(Treatment = ifelse(Plot %in% c("7", "12", "24"), 'N', Treatment)) %>%
   mutate(Treatment = ifelse(Plot %in% c("9", "18", "30"), 'NK', Treatment)) %>%
   mutate(Treatment = ifelse(Plot %in% c("8", "15", "29"), 'NPK', Treatment))
-  group_by(Treatment, Species) %>%
+group_by(Treatment, Species) %>%
   mutate(Treat_abundance=sum(cover)) %>%
   ungroup() %>%
   mutate(Treat_rank=rank(desc(Treat_abundance)))
-         
+
 rank(OldPComm21$Treat_abundance)
 
 PComm1<-read.csv("PlantComm19to23.csv")%>%
@@ -1030,7 +1070,7 @@ PComm<-left_join(PComm1, PCommcolorassign, by="taxa")
 
 
 
-  mutate(colors="dodgerblue2","#E31A1C","green4","#6A3D9A", "#FF7F00","black", "gold1","skyblue2", "#FB9A99", "palegreen2","hotpink","#FDBF6F","gray70", "khaki2","maroon", "orchid1","seagreen","slategrey", "deeppink1", "blue1", "steelblue4","darkturquoise", "green1", "yellow4","darksalmon", "yellow3","darkcyan","darkorange3", "brown","darkviolet", "mediumblue","lawngreen","deeppink", "ivory","firebrick", "goldenrod","cyan", "grey", "orangered","plum1","darkmagenta","darkgreen", "aquamarine","yellow", "lightcoral", "lightskyblue", "chocolate1", "grey30","chartreuse", "bisque", "sienna4", "cornflowerblue","white", "darkred","seagreen1", "mediumorchid2","burlywood","lightgreen", "grey69","navajowhite2", "indianred", "cadetblue2", "turquoise4","springgreen3","khaki","tomato","purple", "saddlebrown","antiquewhite", "olivedrab"))
+mutate(colors="dodgerblue2","#E31A1C","green4","#6A3D9A", "#FF7F00","black", "gold1","skyblue2", "#FB9A99", "palegreen2","hotpink","#FDBF6F","gray70", "khaki2","maroon", "orchid1","seagreen","slategrey", "deeppink1", "blue1", "steelblue4","darkturquoise", "green1", "yellow4","darksalmon", "yellow3","darkcyan","darkorange3", "brown","darkviolet", "mediumblue","lawngreen","deeppink", "ivory","firebrick", "goldenrod","cyan", "grey", "orangered","plum1","darkmagenta","darkgreen", "aquamarine","yellow", "lightcoral", "lightskyblue", "chocolate1", "grey30","chartreuse", "bisque", "sienna4", "cornflowerblue","white", "darkred","seagreen1", "mediumorchid2","burlywood","lightgreen", "grey69","navajowhite2", "indianred", "cadetblue2", "turquoise4","springgreen3","khaki","tomato","purple", "saddlebrown","antiquewhite", "olivedrab"))
 
 PComm19<-(data=subset(PComm, Year == "2019"))
 
@@ -1063,18 +1103,18 @@ NK=9,18,30
 
 
 c25 <- c("dodgerblue2", "#E31A1C", # red
-  "green4",
-  "#6A3D9A", # purple
-  "#FF7F00", # orange
-  "black", "gold1",
-  "skyblue2", "#FB9A99", # lt pink
-  "palegreen2",
-  "#CAB2D6", # lt purple
-  "#FDBF6F", # lt orange
-  "gray70", "khaki2",
-  "maroon", "orchid1", "deeppink1", "blue1", "steelblue4",
-  "darkturquoise", "green1", "yellow4", "yellow3",
-  "darkorange4", "brown")
+         "green4",
+         "#6A3D9A", # purple
+         "#FF7F00", # orange
+         "black", "gold1",
+         "skyblue2", "#FB9A99", # lt pink
+         "palegreen2",
+         "#CAB2D6", # lt purple
+         "#FDBF6F", # lt orange
+         "gray70", "khaki2",
+         "maroon", "orchid1", "deeppink1", "blue1", "steelblue4",
+         "darkturquoise", "green1", "yellow4", "yellow3",
+         "darkorange4", "brown")
 
 
 PComm19Graph<- ggplot(data = PComm19, aes(x = Treatment, y = cover, fill = taxa)) + geom_bar(stat="identity")+
