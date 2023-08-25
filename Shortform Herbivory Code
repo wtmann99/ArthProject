@@ -74,7 +74,7 @@ TP3Herb22<-read.csv("Mann_Damage2022.csv", na.strings = "")%>%
   filter(Timepoint..1.2.3.=="3")%>%
   mutate(Year="22")
 
-TP3Herb22Stretch<- TP1Herb22 %>%
+TP3Herb22Stretch<- TP3Herb22 %>%
   select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
   drop_na(Plot) %>%
   group_by(Block, Plot, Treatment, Replicate, Species) %>%
