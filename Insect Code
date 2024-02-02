@@ -1,4 +1,4 @@
-wd("~/WillMfiles/Koerner Lab/Koerner Lab/R Studio files/Grad Research")
+setwd("~/WillMfiles/Koerner Lab/Koerner Lab/R Studio files/Grad Research")
 library(tidyverse)
 
 VacInsect_2021 <- read.csv("D-Vac LLP Insect ID (2021).csv")
@@ -7,23 +7,23 @@ library(tidyverse)
 
 
 #loading packages
-#install.packages("vegan")
-#install.packages("tidyverse")
-#install.packages("codyn")
-#install.packages("ggplot2")
-#install.packages("reshape2")
-#install.packages("plotly")
-#install.packages("nmle")
-#install.packages("lme4")
-#install.packages("olsrr")
-#install.packages("car")
-#install.packages("patchwork")
-#install.packages("lmerTest")
-#install.packages("piecewiseSEM")
-#install.packages("ggrepel")
-#install.packages("lavaan")
-#install.packages("semPlot")
-#install.packages("MuMIn")
+install.packages("vegan")
+install.packages("tidyverse")
+install.packages("codyn")
+install.packages("ggplot2")
+install.packages("reshape2")
+install.packages("plotly")
+install.packages("nmle")
+install.packages("lme4")
+install.packages("olsrr")
+install.packages("car")
+install.packages("patchwork")
+install.packages("lmerTest")
+install.packages("piecewiseSEM")
+install.packages("ggrepel")
+install.packages("lavaan")
+install.packages("semPlot")
+install.packages("MuMIn")
 
 library(vegan)
 library(tidyverse)
@@ -208,20 +208,6 @@ HerbCon20<- Herb20Stretch %>%
 
 
 
-Master22<-master22
-
-
-TP1<-Master22%>%
-  filter(Timepoint=="1") %>%
-  mutate(Year="TP1")
-
-TP2<-Master22 %>%
-  filter(Timepoint=="2") %>%
-  mutate(Year="TP2")
-
-
-
-
 
 
 Herb21<-read.csv("Entered Sandhills Leaf Damage Data_2021.csv", na.strings = "") %>%
@@ -346,8 +332,8 @@ HerbComp22Stretch<- HerbComp22 %>%
 
 
 Peak22H<- HerbComp22Stretch %>%
-  filter(Timepoint=="2") %>%
-  select(-Timepoint)
+  filter(Timepoint..1.2.3.=="2") %>%
+  select(-Timepoint..1.2.3.)
 
 
 HCon20_21<-full_join(HerbCon20, HerbCon21)
@@ -358,7 +344,7 @@ HComp2020_21<- full_join(Herb20Stretch, Herb21Stretch)
 
 ####Hcompall####
 
-H20n22<-left_join(P22Stretch, Herb20Stretch)
+H20n22<-left_join(Peak22Stretch, Herb20Stretch)
 
 
 
@@ -489,12 +475,12 @@ TrueDamLiatris<-TrueDam %>%
 
 
 TrueHerbDam<-TrueHerb %>%
-  summarise(Block, Plot, Species, Treatment_Year, HerbType, avgherb, Year, Nitrogen, Phosphorous, Potassium, Drought) %>%
+  summarise(Block, Plot, Species, Treatment_Year, HerbType, HerbPerc, Year, Nitrogen, Phosphorous, Potassium, Drought) %>%
   group_by(Plot, Species, Treatment_Year) %>%
-  mutate(Damage= sum(avgherb))%>%
+  mutate(Damage= sum(HerbPerc))%>%
   ungroup() %>%
   mutate(totaldam=Damage) %>%
-  select(Block, Plot, Species, Treatment_Year, avgherb, totaldam, Year, Nitrogen, Phosphorous, Potassium, Drought, HerbType)
+  select(Block, Plot, Species, Treatment_Year, HerbPerc, totaldam, Year, Nitrogen, Phosphorous, Potassium, Drought, HerbType)
 
 mutate(DDamage = ifelse(Drought %in% "D", avgherb, Drought)) %>%
   mutate(DDamage = ifelse(Drought %in% "C", avgherb, Drought))
@@ -541,9 +527,24 @@ HerbConall<- ggplot(HconComp, aes(x=Treatment_Year, y=HerbPerc, fill=HerbType))+
   geom_bar(stat="identity",position="dodge")
 HerbConall
 
-Herball<- ggplot(HCompall, aes(x=Treatment_Year, y=avgherb, fill=HerbType))+
+Herball<- ggplot(HCompall, aes(x=Treatment_Year, y=HerbPerc, fill=HerbType))+
   geom_bar(stat="identity",position="dodge")
 Herball
+
+
+
+####Linear Regressions ####
+TrueDamage<-left_join(HerbDam, Converted, by=c("Plot","Treatment"))
+
+NitrogenRegression<- aggregate(totaldam ~ Nitrogen +Plot+ Year,       # Aggregate data
+                            TrueDamage,FUN=sum) %>%
+  rename(Npresence=totaldam)
+
+
+##Use Nitrogen nutriend order results to mark the data against. (Pure Nitrogen number x Herbivory amount(Npresence))
+income.happiness.lm <- lm(happiness ~ income, data = NitrogenRegression)
+
+summary(income.happiness.lm)
 
 
 
