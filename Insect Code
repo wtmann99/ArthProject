@@ -229,7 +229,7 @@ HerbCon21<- Herb21Stretch %>%
   mutate(Treatment_Year=paste(Treatment, Year, sep="_"))
 
 
-TP1Herb22<-read.csv("Mann_Leaf_Damage_Sandhill_Gamelands_2022.csv", na.strings = "")%>%
+TP1Herb22<-read.csv("Mann_Damage2022.csv", na.strings = "")%>%
   filter(Timepoint..1.2.3.=="1")
 
 TP1Herb22Stretch<- TP1Herb22 %>%
@@ -252,7 +252,7 @@ TP1HerbCon22<- TP1Herb22Stretch %>%
   mutate(Treatment_Year=paste(Treatment, Year, sep="_"))
 
 
-PeakHerb22<-read.csv("Mann_Leaf_Damage_Sandhill_Gamelands_2022.csv", na.strings = "") %>%
+PeakHerb22<-read.csv("Mann_Damage2022.csv", na.strings = "") %>%
   filter(Timepoint..1.2.3.=="2")%>%
   mutate(Year="22-TP2")
 
@@ -270,7 +270,7 @@ Peak22Stretch<- PeakHerb22 %>%
 Peak22Stretch <- Peak22Stretch %>%  
   mutate(HerbPerc = as.numeric(HerbPerc))
 
-TP3Herb22<-read.csv("Mann_Leaf_Damage_Sandhill_Gamelands_2022.csv", na.strings = "")%>%
+TP3Herb22<-read.csv("Mann_Damage2022.csv", na.strings = "")%>%
   filter(Timepoint..1.2.3.=="3")%>%
   mutate(Year="22")
 
@@ -290,7 +290,7 @@ TP3Herb22Stretch <- TP3Herb22Stretch %>%
 
 
 
-Herb23<-read.csv("Mann_Leaf_Damage_Sandhill_Gamelands_2023.csv", na.strings = "")%>%
+Herb23<-read.csv("Mann_Leaf_Damage_2023.csv", na.strings = "")%>%
   mutate(Year="23")
 
 
@@ -537,81 +537,20 @@ Herball
 TrueDamage<-left_join(HerbDam, Converted, by=c("Plot","Treatment"))
 
 NitrogenRegression<- aggregate(totaldam ~ Nitrogen +Plot+ Year,       # Aggregate data
-                               TrueDamage,FUN=sum) %>%
+                            TrueDamage,FUN=sum) %>%
   rename(Npresence=totaldam)
 
-PlantNutTP2<-read.csv("NutrientsTP2.csv")%>%
-  select(Plot, N, P, K, Year)
 
-NregressTP2<-left_join(NitrogenRegression,PlantNutTP2)
+##Use Nitrogen nutriend order results to mark the data against. (Pure Nitrogen number x Herbivory amount(Npresence))
+income.happiness.lm <- lm(happiness ~ income, data = NitrogenRegression)
 
-TrueDamageall<-left_join(HerbDamyears, Converted, by=c("Plot","Treatment"))
-
-TrueDam22<-TrueDamageall%>%
-  filter(Year!="20")%>%
-  filter(Year!="21")%>%
-  filter(Year!="23")
-NRegression22<- aggregate(totaldam ~ Nitrogen +Plot+ Year,       # Aggregate data
-                          TrueDam22,FUN=sum) %>%
-  rename(Npresence=totaldam)
-
-Nregress22<-left_join(NRegression22,PlantNutTP2)
-
-
-
-Pregression22<- aggregate(totaldam ~ Phosphorous +Plot+ Year,       # Aggregate data
-                          TrueDam22,FUN=sum) %>%
-  rename(Ppresence=totaldam)
-Pregress22<-left_join(Pregression22,PlantNutTP2)
-
-
-KRegression22<- aggregate(totaldam ~ Potassium +Plot+ Year,       # Aggregate data
-                          TrueDam22,FUN=sum) %>%
-  rename(Kpresence=totaldam)
-Kregress22<-left_join(KRegression22,PlantNutTP2)
-
-
-#####Use Nitrogen nutriend order results to mark the data against. (Pure Nitrogen number x Herbivory amount(Npresence))####
-
-#Example#
-Exampleregression<-lm(happiness ~ income, data= income.data)
 summary(income.happiness.lm)
 
-Exampleregressiongraph<-ggplot(income.data, aes(x=income, y=happiness))+ geom_point()
-Exampleregressiongraph
 
 
-#####Nitrogen Regression#####
-
-RegressN22 <- lm(Npresence ~ N, data = Nregress22)
-summary(RegressN22)
-
-Nregressgraph22<-ggplot(Nregress22, aes(x=N, y=Npresence))+geom_point()
-Nregressgraph22<-Nregressgraph22+geom_smooth(method = "lm", col="black")
-Nregressgraph22
 
 
-#####Phosphorous Regression#####
-
-RegressP22 <- lm(Ppresence ~ P, data = Pregress22)
-summary(RegressP22)
-
-Pregressgraph22<-ggplot(Pregress22, aes(x=P, y=Ppresence))+geom_point()
-Pregressgraph22<-Pregressgraph22+geom_smooth(method = "lm", col="black")
-Pregressgraph22
-
-
-#####Potassium Regression#####
-
-RegressK22 <- lm(Kpresence ~ K, data = Kregress22)
-summary(RegressK22)
-
-Kregressgraph22<-ggplot(Kregress22, aes(x=K, y=Kpresence))+geom_point()
-Kregressgraph22<-Kregressgraph22+geom_smooth(method = "lm", col="black")
-Kregressgraph22
-
-
-####Compare Number of Orders observed in Each treatment and year, taking account for randomness in Plot ####
+#####Compare Number of Orders observed in Each treatment and year, taking account for randomness in Plot ####
 
 OrdNutTreat<-lmerTest::lmer(data=Vac_20to21Ord, OrdCount~Treatment*Year+ (1|Plot))
 OrdNutTreat
@@ -1236,3 +1175,53 @@ PCommGraph<- ggplot(data = PComm, aes(x = Treatment, y = cover, fill=taxa)) + ge
 PCommGraph
 
 PComm19Graph<-(data=subset(PCommGraph, Year == "2019"))
+
+
+####NMDS Analysis####
+
+#Alyssa example code:
+### NMDS and PerMANOVA ####
+# subset for only 2023 data and only main effects #
+# convert df to wide format to account for pres/abs of all species for each plot #
+# convert back to long format #
+speciescomposition2 <- speciescomposition %>%
+  select(-lifeform,-lifespan)
+MaxlongFormat <- subset(speciescomposition2,year=="2023") %>%
+  group_by(timepoint, block, plot)%>%
+  spread(taxa, cover) %>%
+  gather(taxa, cover, 6:59) %>%
+  # average cover in early and late sampling time points (keep cover for spp in only 1 season) #
+  group_by(block, plot,taxa) %>%
+  reframe(maxtaxacover = max(cover))
+# if spp was absent in plot, give a zero cover #
+MaxlongFormat[is.na(MaxlongFormat)]<-0
+MaxlongFormat2 <- MaxlongFormat %>%
+  full_join(lifeform, by=c("taxa"))
+
+##### Plant Species Composition Ordinations and Stats #####
+wide <- merge(MaxlongFormat2, treatments, by=c("block", "plot"))
+wideFormat <- subset(wide, drought!="Drought") %>%
+  group_by(Nutrients,block, plot, lifeform)%>%
+  reframe(maxfunccover = sum(maxtaxacover)) %>%
+  group_by(Nutrients,block, plot)%>%
+  spread(lifeform, maxfunccover)
+MaxwideFormat <- subset(wideFormat, Nutrients=="C_C_C" | Nutrients=="C_C_Potassium" | Nutrients=="C_Phosphorus_C" | Nutrients=="Nitrogen_C_C")
+MaxwideFormat[is.na(MaxwideFormat)]<-0
+Maxord <- MaxwideFormat[,4:ncol(MaxwideFormat)]
+Maxord1<- MaxwideFormat[,1:3]
+Maxord2<- metaMDS(Maxord,distance="bray", k=2, trymax=100)
+MaxNMDS <- data.frame(Maxord1,scores(Maxord2,display="sites")) %>%
+  rename(MaxNMDS1 = NMDS1, MaxNMDS2 = NMDS2)
+
+##### PerMANOVA to test for significant differences between centroids (treatments) #####
+# year*nutrients not significant #
+PerMANOVA <- adonis2(formula = Maxord ~ Nutrients + (1|block),
+                     data=Maxord1,permutations = 999, method = "bray")
+Posthoc_NPK<-pairwise.adonis(Maxord,factors=Maxord1$Nutrients, p.adjust.m = "BH")
+Posthoc_NPK
+
+
+####Mann NMDS Analysis####
+#Use Mann_Leaf_Damage_Sandhill_Gamelands_2022 and NutrientsTP2 for analysis
+#This gives you actual herbivory information and the nutrient content of those plants
+#make the dataframes wide
