@@ -536,8 +536,10 @@ Herball
 ####Linear Regressions ####
 TrueDamage<-left_join(HerbDam, Converted, by=c("Plot","Treatment"))
 
-NitrogenRegression<- aggregate(totaldam ~ Nitrogen +Plot+ Year,       # Aggregate data
-                               TrueDamage,FUN=sum) %>%
+NitrogenRegression<- TrueDamage %>%
+  filter(Drought!='D')%>%
+  aggregate(totaldam ~ Nitrogen +Plot+ Year,       # Aggregate data
+                              FUN=sum) %>%
   rename(Npresence=totaldam)
 
 PlantNutTP2<-read.csv("NutrientsTP2.csv")%>%
@@ -551,22 +553,28 @@ TrueDam22<-TrueDamageall%>%
   filter(Year!="20")%>%
   filter(Year!="21")%>%
   filter(Year!="23")
-NRegression22<- aggregate(totaldam ~ Nitrogen +Plot+ Year,       # Aggregate data
-                          TrueDam22,FUN=sum) %>%
+NRegression22<- TrueDam22 %>%
+  filter(Drought!='D')%>%
+  aggregate(totaldam ~ Nitrogen +Plot+ Year,       # Aggregate data
+            FUN=sum) %>%
   rename(Npresence=totaldam)
 
 Nregress22<-left_join(NRegression22,PlantNutTP2)
 
 
 
-Pregression22<- aggregate(totaldam ~ Phosphorous +Plot+ Year,       # Aggregate data
-                          TrueDam22,FUN=sum) %>%
+PRegression22<- TrueDam22 %>%
+  filter(Drought!='D')%>%
+  aggregate(totaldam ~ Phosphorous +Plot+ Year,       # Aggregate data
+            FUN=sum) %>%
   rename(Ppresence=totaldam)
-Pregress22<-left_join(Pregression22,PlantNutTP2)
+Pregress22<-left_join(PRegression22,PlantNutTP2)
 
 
-KRegression22<- aggregate(totaldam ~ Potassium +Plot+ Year,       # Aggregate data
-                          TrueDam22,FUN=sum) %>%
+KRegression22<- TrueDam22 %>%
+  filter(Drought!='D')%>%
+  aggregate(totaldam ~ Potassium +Plot+ Year,       # Aggregate data
+            FUN=sum) %>%
   rename(Kpresence=totaldam)
 Kregress22<-left_join(KRegression22,PlantNutTP2)
 
@@ -591,6 +599,26 @@ Nregressgraph22<-Nregressgraph22+geom_smooth(method = "lm", col="black")
 Nregressgraph22
 
 
+Nregress22TP1<-Nregress22 %>%
+  filter(Year=="22-TP1")
+
+RegressN22TP1<-lm(Npresence ~ N, data = Nregress22TP1)
+summary(RegressN22TP1)
+
+Nregress22TP2<-Nregress22 %>%
+  filter(Year=="22-TP2")
+
+RegressN22TP2<-lm(Npresence ~ N, data = Nregress22TP2)
+summary(RegressN22TP2)
+
+Nregress22TP3<-Nregress22 %>%
+  filter(Year=="22-TP3")
+
+RegressN22TP3<-lm(Npresence ~ N, data = Nregress22TP3)
+summary(RegressN22TP3)
+
+
+
 #####Phosphorous Regression#####
 
 RegressP22 <- lm(Ppresence ~ P, data = Pregress22)
@@ -601,6 +629,25 @@ Pregressgraph22<-Pregressgraph22+geom_smooth(method = "lm", col="black")
 Pregressgraph22
 
 
+Pregress22TP1<-Pregress22 %>%
+  filter(Year=="22-TP1")
+
+RegressP22TP1<-lm(Ppresence ~ P, data = Pregress22TP1)
+summary(RegressP22TP1)
+
+Pregress22TP2<-Pregress22 %>%
+  filter(Year=="22-TP2")
+
+RegressP22TP2<-lm(Ppresence ~ P, data = Pregress22TP2)
+summary(RegressP22TP2)
+
+Pregress22TP3<-Pregress22 %>%
+  filter(Year=="22-TP3")
+
+RegressP22TP3<-lm(Ppresence ~ P, data = Pregress22TP3)
+summary(RegressP22TP3)
+
+
 #####Potassium Regression#####
 
 RegressK22 <- lm(Kpresence ~ K, data = Kregress22)
@@ -609,6 +656,32 @@ summary(RegressK22)
 Kregressgraph22<-ggplot(Kregress22, aes(x=K, y=Kpresence))+geom_point()
 Kregressgraph22<-Kregressgraph22+geom_smooth(method = "lm", col="black")
 Kregressgraph22
+
+
+Kregress22TP1<-Kregress22 %>%
+  filter(Year=="22-TP1")
+
+RegressK22TP1<-lm(Kpresence ~ K, data = Kregress22TP1)
+summary(RegressK22TP1)
+
+
+
+Kregress22TP2<-Kregress22 %>%
+  filter(Year=="22-TP2")
+
+RegressK22TP2<-lm(Kpresence ~ K, data = Kregress22TP2)
+summary(RegressK22TP2)
+
+Kregressgraph22TP2<-ggplot(Kregress22TP2, aes(x=K, y=Kpresence))+geom_point()
+Kregressgraph22TP2<-Kregressgraph22TP2+geom_smooth(method = "lm", col="black")
+Kregressgraph22TP2
+
+
+Kregress22TP3<-Kregress22 %>%
+  filter(Year=="22-TP3")
+
+RegressK22TP3<-lm(Kpresence ~ K, data = Kregress22TP3)
+summary(RegressK22TP3)
 
 
 ####Compare Number of Orders observed in Each treatment and year, taking account for randomness in Plot ####
@@ -1255,6 +1328,7 @@ MaxlongFormat <- subset(speciescomposition2,year=="2023") %>%
 MaxlongFormat[is.na(MaxlongFormat)]<-0
 MaxlongFormat2 <- MaxlongFormat %>%
   full_join(lifeform, by=c("taxa"))
+
 ## Plant Species Composition Ordinations and Stats ####
 wide <- merge(MaxlongFormat2, treatments, by=c("block", "plot"))
 wideFormat <- subset(wide, drought!="Drought") %>%
@@ -1275,3 +1349,6 @@ PerMANOVA <- adonis2(formula = Maxord ~ Nutrients + (1|block),
                      data=Maxord1,permutations = 999, method = "bray")
 Posthoc_NPK<-pairwise.adonis(Maxord,factors=Maxord1$Nutrients, p.adjust.m = "BH")
 Posthoc_NPK
+
+
+
