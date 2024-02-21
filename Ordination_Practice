@@ -1,0 +1,113 @@
+setwd("C:/Users/wtmann/OneDrive - UNCG/Documents/WillMfiles/Zip files/data")
+
+
+#### Understanding how species and communities respond to the environment is a central focus of ecology.####
+# Ecologists have long sought efficient ways to summarize large data sets comprised of many interdependent
+# variables, typically either species or environmental variables, and to summarize the distribution of sample
+# points in a low dimensional space where alternative explanations can be explored for the principal dimensions
+# of this reduced space. Although the need to summarize large, interdependent datasets exists across
+# many domains of biology, ordinations are a primary tool in ecology and thus examples in this module are
+# focused on summarizing environmental and ecological information using these tools.
+
+## This module covers two very common different types of ordinations:
+# 1) PCA, or principal components analysis, and
+# 2) NMDS, or non-metric multidimensional scaling
+
+
+# We will use a dataset of bird community compositions taken from research conducted in the Drift Creek Basin
+# in the central Oregon Coast Range during 1990 (McGarigal and McComb, unpubl. data). Briefly, the full dataset
+# includes 164 observations (rows/sites) of bird counts (63 species). The first part of the dataset is thus a
+# typical community, or site-x-species, matrix. There are additional columns that record 48 compiled
+# habitat (environment) variables for each of the sites as well.
+
+
+# Principal Components Analysis (PCA) can be used to reduce the distribution of sample points to 2-4 major dimensions using ordinations
+# PCA is an eigenvector technique that attempts to explain as much variance as possible on each of an series of orthogonal (i.e., uncorrelated)
+# vectors spanning the data space. It is used to transform highly multivariate data into a lower-dimensional space where axes of variation
+# are orthogonal and organized in order of variation explained.
+
+
+# Predictor variables
+# Response variables
+
+# We will use the prcomp() function and rda() functions
+# Rda stands for Redundancy analysis, a constrained pca that predicts maximum correlation with some independane value(s)
+# RDA and PCA can be used interchangeably to conduct pca not using any constraining variables
+
+
+#### Code start ####
+library(vegan)
+birdhab <- read.csv("C:/Users/wtmann/OneDrive - UNCG/Documents/WillMfiles/Zip files/data/birdhab.csv", header = TRUE)
+head(birdhab)
+
+## The file contains response (community) data and predictor (environmental) data. So, work 
+# to split the dataset into its two components - species variables and habitat variables. The 48 habitat
+# variables will be subjected to PCA and the bird community data will be subjected to NMDS.
+
+rip.bird<- subset(birdhab, select = AMGO:WWPE)
+head(rip.bird)
+
+
+rip.hab<- subset(birdhab, select = VAREA:CONEDGE)
+head(rip.hab)
+
+
+## prcomp() ####
+# The prcomp() function in R allows us to use a correlation or covariance matrix
+# Functionally, using a correlation matrix treats all variables the same
+# (standardized to mean = 0 and std. deviation = 1). Even if all variables were measured
+# on the same scale (e.g., percent cover), to prevent the dominant variables from determining
+# the results, we probably want to use correlation. In prcomp(), this means specifying scale = TRUE in the function call.
+
+
+
+rip.hab.pca<- prcomp(rip.hab, scale = TRUE) #conduct pca and set scale= TRUE to use correlation matrix
+# Plot how much of the variance i explained by each PCA component
+screeplot(rip.hab.pca) #npcs specifies how many axes to consider
+
+head(rip.hab.pca$x)
+
+
+## biplot ####
+# A biplot plots the PC scores for all our bird sites, PLUS the raw data variables 
+# to help visualize which variables contribute the most to the resulting (transformed)
+# PC (Principal component) axes. Thus far, we have been using the prcomp() function to
+# conduct the PCA. However, to make use of the extensive plotting functions in the
+# vegan library, we will use the rda() function in the vegan library. The sample scores
+# produced by rda() are scaled differently from those produced by prcomp(), but the
+# sample relationships displayed in the graphs are the same, so the differences need not
+# bother us. So, let’s generate the rda object from a PCA using the rda() function, as follows:
+
+rip.hab.rda<- rda(rip.hab, scale = TRUE)
+
+# The sample scores along axes (= PC’s) express the variances (eigenvalues) of the axes and the variables (e.g., species)
+# are depicted as vectors emanating from the origin (i.e., the centroid of the sample points), where the directional vector
+# indicates the direction of maximum linear change in that variable. The basic biplot can be generated using the ordiplot() function, as follows:
+
+ordiplot(rip.hab.rda, choices = c(1,2), type = 'text', scaling = 2)
+
+
+
+
+counts<- colSums(rip.hab)
+ordiplot(rip.hab.rda, choices = c(1,2), type = 'none')
+orditorp( rip.hab.rda, display = 'sites', col = "blue", pch = 19)
+orditorp(rip.hab.rda, display = 'species', priority = counts, col = 'red', pch = 19)
+
+# Very congested plot. Use the identify() function to label points of interest
+
+p<-ordiplot(rip.hab.rda, choices = c(1,2), type = 'points')
+identify(p, 'species') #for variables (species)
+
+## integer (0)
+
+# Notice that R is still running – at this point, click on the species that appear to be
+# having the biggest impact. Click on as many as you want. Then press finish. Those points only will then be labeled. 
+
+#repeat for the sites
+
+p<-ordiplot(rip.hab.rda, choices = c(1,2), type = 'points')
+identify(p, 'sites') #for samples (sites)
+
+## integer(0)
+
