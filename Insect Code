@@ -533,26 +533,39 @@ Herball
 
 
 
-####Linear Regressions ####
+####Linear Regressions: You should start here! ####
 TrueDamage<-left_join(HerbDam, Converted, by=c("Plot","Treatment"))
+
+AllRegression22<- TrueDam22 %>%
+  filter(Drought!='D')%>%
+  aggregate(totaldam ~ Nitrogen+Phosphorous+Potassium+Plot+Year,       # Aggregate data
+            FUN=sum) %>%
+  rename(Nutpresence=totaldam)
+
 
 NitrogenRegression<- TrueDamage %>%
   filter(Drought!='D')%>%
   aggregate(totaldam ~ Nitrogen +Plot+ Year,       # Aggregate data
-                              FUN=sum) %>%
+            FUN=sum) %>%
   rename(Npresence=totaldam)
 
-PlantNutTP2<-read.csv("NutrientsTP2.csv")%>%
-  select(Plot, N, P, K, Year)
+
+PlantNut22<-read.csv("NutrientsTP2.csv")
 
 NregressTP2<-left_join(NitrogenRegression,PlantNutTP2)
+
+Allregress22<-left_join(AllRegression22, PlantNutTP2)
+Metrics<- read.csv("PlantCommunityMetrics.csv")
+Allregress22<-left_join(Allregress22, Metrics)
 
 TrueDamageall<-left_join(HerbDamyears, Converted, by=c("Plot","Treatment"))
 
 TrueDam22<-TrueDamageall%>%
   filter(Year!="20")%>%
   filter(Year!="21")%>%
-  filter(Year!="23")
+  filter(Year!="23") %>%
+  filter(Drought!='D') %>%
+  select(-Drought)
 NRegression22<- TrueDam22 %>%
   filter(Drought!='D')%>%
   aggregate(totaldam ~ Nitrogen +Plot+ Year,       # Aggregate data
@@ -593,10 +606,6 @@ Exampleregressiongraph
 
 RegressN22 <- lm(Npresence ~ N, data = Nregress22)
 summary(RegressN22)
-
-Nregressgraph22<-ggplot(Nregress22, aes(x=N, y=Npresence))+geom_point()
-Nregressgraph22<-Nregressgraph22+geom_smooth(method = "lm", col="black")
-Nregressgraph22
 
 
 Nregress22TP1<-Nregress22 %>%
@@ -682,6 +691,59 @@ Kregress22TP3<-Kregress22 %>%
 
 RegressK22TP3<-lm(Kpresence ~ K, data = Kregress22TP3)
 summary(RegressK22TP3)
+
+####All Regression####
+## Nitrogen ##
+NewRegressN22<-lm(Nutpresence ~ N, data = Allregress22)
+summary(NewRegressN22)
+
+Nregnut22<-ggplot(Allregress22, aes(x=N, y=Nutpresence))+geom_point()
+Nregnut22<-Nregnut22+geom_smooth(method = "lm", col="black")
+Nregnut22
+
+
+## Phosphorous ##
+NewRegressP22<-lm(Nutpresence ~ P, data = Allregress22)
+summary(NewRegressP22)
+
+Pregnut22<-ggplot(Allregress22, aes(x=P, y=Nutpresence))+geom_point()
+Pregnut22<-Nregnut22+geom_smooth(method = "lm", col="black")
+Pregnut22
+
+
+
+## Potassium ##
+NewRegressK22<-lm(Nutpresence ~ K, data = Allregress22)
+summary(NewRegressK22)
+
+Kregnut22<-ggplot(Allregress22, aes(x=K, y=Nutpresence))+geom_point()
+Kregnut22<-Kregnut22+geom_smooth(method = "lm", col="black")
+Kregnut22
+
+
+
+
+
+
+Nregress22TP1<-Nregress22 %>%
+  filter(Year=="22-TP1")
+
+RegressN22TP1<-lm(Npresence ~ N, data = Nregress22TP1)
+summary(RegressN22TP1)
+
+Nregress22TP2<-Nregress22 %>%
+  filter(Year=="22-TP2")
+
+RegressN22TP2<-lm(Npresence ~ N, data = Nregress22TP2)
+summary(RegressN22TP2)
+
+Nregress22TP3<-Nregress22 %>%
+  filter(Year=="22-TP3")
+
+RegressN22TP3<-lm(Npresence ~ N, data = Nregress22TP3)
+summary(RegressN22TP3)
+
+
 
 
 ####Compare Number of Orders observed in Each treatment and year, taking account for randomness in Plot ####
@@ -1343,12 +1405,48 @@ Maxord1<- MaxwideFormat[,1:3]
 Maxord2<- metaMDS(Maxord,distance="bray", k=2, trymax=100)
 MaxNMDS <- data.frame(Maxord1,scores(Maxord2,display="sites")) %>%
   rename(MaxNMDS1 = NMDS1, MaxNMDS2 = NMDS2)
+
 ## PerMANOVA to test for significant differences between centroids (treatments) ##
 # year*nutrients not significant #
-PerMANOVA <- adonis2(formula = Maxord ~ Nutrients + (1|block),
-                     data=Maxord1,permutations = 999, method = "bray")
-Posthoc_NPK<-pairwise.adonis(Maxord,factors=Maxord1$Nutrients, p.adjust.m = "BH")
+PerMANOVA <- adonis2(formula = MidNperc ~ N + P*(1|block),
+                     data = PlantOrdination22,
+                     permutations = 99,
+                     method = "bray")
+
+Posthoc_NPK<-pairwise.adonis(PlantOrdination22,factors=c(PlantOrdination22$MidNperc, PlantOrdination22$MidKperc, PlantOrdination22$MidPperc), p.adjust.m = "BH")
 Posthoc_NPK
+
+
+
+PlantNut22<-read.csv("NutrientsTP2.csv")%>%
+  filter(drought!="Drought")%>%
+  select(-drought)
+
+PlantCommall<-read.csv("PlantCommunityMetrics.csv")
+PlantComm22<-PlantCommall%>%
+  filter(year=="2022")%>%
+  filter(drought!="Drought")%>%
+  select(-c(drought,year,Maxdomspp2,Early2022domspp2, Mid2022domspp2,treatment))
+
+PlantOrdination22<-left_join(PlantNut22,PlantComm22, by=c("Plot", "N", "P", "K"))
+
+
+# Graphical representation of communities #
+ordination <- PlantOrdination22 %>%
+  group_by(N, P, K, treatment)%>%
+  reframe(sd1=sd(MaxNMDS1), sd2=sd(MaxNMDS2),
+          NMDS1=mean(MaxNMDS1), NMDS2=mean(MaxNMDS2),
+          n=n())%>%
+  mutate(se1=sd1/sqrt(n))%>%
+  mutate(se2=sd2/sqrt(n))
+ggplot(ordination, aes(x=NMDS1, y=NMDS2)) +
+  geom_point(aes(color=treatment),size=5) +
+  geom_errorbar(aes(ymin=NMDS2-se2,ymax=NMDS2+se2))+
+  geom_errorbarh(aes(xmin=NMDS1-se1,xmax=NMDS1+se1))+
+  scale_color_manual(values=c("#D2B48C","#FF0000", "#4876FF", "#9B30FF","#EEC900", "#FF7600", "#00CD66", "#333333"),
+                     labels=c("Control", "Potassium (K)", "Phosphorus (P)", "PK", "Nitrogen (N)", "NK", "NP", "NPK"))
+
+
 
 
 
