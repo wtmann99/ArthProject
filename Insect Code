@@ -725,6 +725,17 @@ Kregnut22
 
 
 
+
+
+
+
+
+
+
+
+
+
+#Example Regression Code #
 Nregress22TP1<-Nregress22 %>%
   filter(Year=="22-TP1")
 
