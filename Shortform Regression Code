@@ -87,6 +87,8 @@ HCompall<-full_join(HCompall, Herb23Stretch)%>%
   mutate(Treatment_Year=paste(Treatment, Year, sep="_"))
 
 
+##Herb Dam####
+
 HerbDam<-HCompall %>%
   summarise(Block, Plot, Year, Treatment, HerbPerc, Time.Point)%>%
   group_by(Block, Plot, Year, Treatment, Time.Point) %>%
@@ -161,8 +163,81 @@ Vac_Ord22Clean<-VacInsect_2022%>%
   group_by(Plot, Treatment, Order, Year, Time.Point) %>%
   summarise(OrdCount=length(Order)) %>%
   ungroup()%>%
-  select(-Treatment)%>%
-  pivot_wider(names_from = Order, values_from = OrdCount)
+  select(-Treatment)
+  #pivot_wider(names_from = Order, values_from = OrdCount)
+
+Vac_Fam22Clean<-VacInsect_2022%>%
+  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
+  mutate(Year=paste('2022')) %>%
+  filter(Order!="Body parts") %>%
+  filter(Order!="Body Parts")%>%
+  group_by(Plot, Treatment, Order, Family, Year, Time.Point) %>%
+  summarise(FamCount=length(Family)) %>%
+  ungroup()%>%
+  select(-Treatment)
+Vac_Ord20Clean<-VacInsect_2020%>%
+  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
+  mutate(Year=paste('2020')) %>%
+  filter(Order!="Body parts") %>%
+  filter(Order!="Body Parts")%>%
+  mutate(Time.Point=paste('2'))%>%
+  group_by(Plot, Treatment, Order, Year, Time.Point) %>%
+  summarise(OrdCount=length(Order)) %>%
+  ungroup()%>%
+  select(-Treatment)
+Vac_Fam20Clean<-VacInsect_2020%>%
+  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
+  mutate(Year=paste('2020')) %>%
+  filter(Order!="Body parts") %>%
+  filter(Order!="Body Parts")%>%
+  mutate(Time.Point=paste('2'))%>%
+  group_by(Plot, Treatment, Order, Family, Year, Time.Point) %>%
+  summarise(FamCount=length(Family)) %>%
+  ungroup()%>%
+  select(-Treatment)
+
+Vac_Ord21Clean<-VacInsect_2021%>%
+  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
+  mutate(Year=paste('2021')) %>%
+  filter(Order!="Body parts") %>%
+  filter(Order!="Body Parts")%>%
+  mutate(Time.Point=paste('2'))%>%
+  group_by(Plot, Treatment, Order, Year, Time.Point) %>%
+  summarise(OrdCount=length(Order)) %>%
+  ungroup()%>%
+  select(-Treatment)
+Vac_Fam21Clean<-VacInsect_2021%>%
+  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
+  mutate(Year=paste('2021')) %>%
+  filter(Order!="Body parts") %>%
+  filter(Order!="Body Parts")%>%
+  mutate(Time.Point=paste('2'))%>%
+  group_by(Plot, Treatment, Order, Family, Year, Time.Point) %>%
+  summarise(FamCount=length(Family)) %>%
+  ungroup()%>%
+  select(-Treatment)
+
+Vac_Ord23Clean<-VacInsect_2023%>%
+  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
+  mutate(Year=paste('2023')) %>%
+  filter(Order!="Body parts") %>%
+  filter(Order!="Body Parts")%>%
+  mutate(Time.Point=paste('2'))%>%
+  group_by(Plot, Treatment, Order, Year, Time.Point) %>%
+  summarise(OrdCount=length(Order)) %>%
+  ungroup()%>%
+  select(-Treatment)
+
+Vac_Ord20_21<-full_join(Vac_Ord20Clean, Vac_Ord21Clean)%>%
+  mutate(Time.Point=as.integer(Time.Point))
+Vac_Ord20_22<-full_join(Vac_Ord22Clean, Vac_Ord20_21)
+
+
+Vac_Fam20_21<-full_join(Vac_Fam20Clean, Vac_Fam21Clean)%>%
+  mutate(Time.Point=as.integer(Time.Point))
+Vac_Fam20_22<-full_join(Vac_Fam22Clean, Vac_Fam20_21)
+
+
 
 Vacord22<-left_join(Vac_Ord22Clean, Converted, by="Plot")
 
@@ -280,39 +355,184 @@ PlantNutTP2<-PlantNutTP2%>%
   filter(Plot!="14") %>%
   filter(Plot!="20")%>%
   filter(Plot!="23") %>%
-  filter(Plot!="27")
-  mutate(Nperc=as.character(PlantNutTP2$Nperc))
+  filter(Plot!="27"))
+  mutate(Nperc=as.character(PlantNutTP2$Nperc)))
 
-AllYearRegress<-full_join(AllRegMetric,PlantNutTP2, by=c("Plot","Year","Time.Point"))
+#All regressions against Herbivory damage (all years) ####
+AllYearRegress<-full_join(AllRegMetric,PlantNutTP2, by=c("Plot","Year","Time.Point"))# %>%
+  filter(Time.Point=="2")
 
+#Nitrogen and Leaf Percent Nitrogen- confusing significance(unsure)
 RegressN <- lm(Nutpresence ~ N, subset(AllYearRegress, Year=="2022"))
 summary(RegressN)
-RegressNperc<-lm(Nutpresence ~ Nperc, subset(AllYearRegress, Year=="2022"))
+RegressNperc <- lm(Nutpresence ~ Nperc, subset(AllYearRegress, Year=="2022"))
 summary(RegressNperc)
-
-Nregnut<-ggplot(AllYearRegress, aes(x=Nperc, y=Nutpresence))+geom_point()
+Nregnut<-ggplot(subset(AllYearRegress, !is.na(Nperc)), aes(x=Nperc, y=Nutpresence))+geom_point()
 Nregnut<-Nregnut+geom_smooth(method = "lm", col="black")
 Nregnut
 
-
+#Phosphorous and Leaf Percent Phosphorous- marginal significance
 RegressP <- lm(Nutpresence ~ P, subset(AllYearRegress, Year=="2022"))
 summary(RegressP)
 RegressPperc <- lm(Nutpresence ~ Pperc, subset(AllYearRegress, Year=="2022"))
 summary(RegressPperc)
+Pregnut<-ggplot(subset(AllYearRegress, !is.na(Pperc)), aes(x=Pperc, y=Nutpresence))+geom_point()
+Pregnut<-Pregnut+geom_smooth(method = "lm", col="black")
+Pregnut
 
+#Potassium and Leaf Percent Potassium
 RegressK <- lm(Nutpresence ~ K, subset(AllYearRegress, Year=="2022"))
 summary(RegressK)
 RegressKperc <- lm(Nutpresence ~ Kperc, subset(AllYearRegress, Year=="2022"))
 summary(RegressKperc)
 
+#Timepoint regressions ####
+
+AllRegMetric %>%
+  mutate(Time.Point=as.integer(Time.Point))
+  #mutate(Time.Point=as.character(Time.Point))
+
+
+
+RegressTP123<-full_join(AllRegMetric,PlantNutTP2, by=c("Plot","Year","Time.Point")) %>%
+  filter(Year=="2022")
+
+HerbNut<-AllYearRegress %>%
+  select(Year, Plot, Time.Point, Nutpresence, Nperc, Pperc, Kperc)%>%
+  mutate(Time.Point=as.integer(Time.Point))
+HerbOrder<-full_join(HerbNut, Vac_Ord20_22, by=c("Year", "Plot", "Time.Point")) %>%
+  filter(Plot!="3")%>%
+  filter(Plot!="6") %>%
+  filter(Plot!="14") %>%
+  filter(Plot!="20")%>%
+  filter(Plot!="23") %>%
+  filter(Plot!="27")
+
+HerbFamily<-full_join(HerbNut, Vac_Fam20_22, by=c("Year", "Plot", "Time.Point")) %>%
+  filter(Plot!="3")%>%
+  filter(Plot!="6") %>%
+  filter(Plot!="14") %>%
+  filter(Plot!="20")%>%
+  filter(Plot!="23") %>%
+  filter(Plot!="27")
+
+
+RegressHerbOrder<-lm(Nutpresence ~ Order, data= HerbOrder)
+summary(RegressHerbOrder)
+Orderreg<-ggplot(subset(HerbOrder, !is.na(Order)), aes(x=Order))+geom_bar()
+Orderreg<-Orderreg+geom_smooth(method = "lm", col="black")
+Orderreg
+
+RegressHerbFamily<-lm(Nutpresence ~ Family, data= HerbFamily)
+summary(RegressHerbFamily)
+Famreg<-ggplot(subset(HerbFamily, !is.na(Family)), aes(x=Family))+geom_bar()
+Famreg
+
+
+
+# Timepoint 1
+RegressTP1<-RegressTP123 %>%
+  filter(Time.Point=="1")%>%
+  select(c(Plot, Year, Time.Point, Nutpresence,Nperc, Pperc, Kperc,Early2022NMDS1,Early2022NMDS2, Early2022Richness, Early2022domspp1))
+
+
+
+
+
+
+
+
+
+#Timepoint 2
+RegressTP2<-RegressTP123 %>%
+  filter(Time.Point=="2")%>%
+  select(c(Plot, Year, Time.Point, Nutpresence,Nperc, Pperc, Kperc,Mid2022NMDS1,Mid2022NMDS2, Mid2022Richness, Mid2022domspp1))
+
+
+
+
+
+
+
+
+#Timepoint 3
+RegressTP3<-RegressTP123 %>%
+  filter(Time.Point=="3")%>%
+  select(c(Plot, Year, Time.Point, Nutpresence,Nperc, Pperc, Kperc,Late2022NMDS1,Late2022NMDS2, Late2022Richness, Late2022domspp1))
+
+
+
+#All year Regressions####
+#NMDS1 and NMDS2
 RegressNMDS1<-lm(Nutpresence ~ MaxNMDS1, subset(AllYearRegress, Year=="2022"))
 summary(RegressNMDS1)
 RegressNMDS2<-lm(Nutpresence ~ MaxNMDS2, subset(AllYearRegress, Year=="2022"))
 summary(RegressNMDS2)
-RegressANPP<-lm(Nutpresence ~ Maxwirecov, data= AllYearRegress, Year=="2022")
-summary(RegressANPP)
-RegressANPP<-lm(Nutpresence ~ Maxwirecov, data= AllYearRegress, Year=="2022")
-summary(RegressANPP)
+
+#Wiregrass cover
+Regresswirecov<-lm(Nutpresence ~ Maxwirecov, data= AllYearRegress)
+summary(Regresswirecov)
+
+#Plant Shannon diversity- marginal significance
+RegressShannon<-lm(Nutpresence ~ MaxShannon, data= AllYearRegress)
+summary(RegressShannon)
+Shannreg<-ggplot(subset(AllYearRegress, !is.na(MaxShannon)), aes(x=MaxShannon, y=Nutpresence))+geom_point()
+Shannreg<-Shannreg+geom_smooth(method = "lm", col="black")
+Shannreg
+
+#Plant Richness- very significant
+RegressRichness<-lm(Nutpresence ~ MaxRichness, data= AllYearRegress)
+summary(RegressRichness)
+Richreg<-ggplot(subset(AllYearRegress, !is.na(MaxRichness)), aes(x=MaxRichness, y=Nutpresence))+geom_point()
+Richreg<-Richreg+geom_smooth(method = "lm", col="black")
+Richreg
+
+#Plant BP dom- marginally significant
+RegressBPdom<-lm(Nutpresence ~ MaxBPdom, data= AllYearRegress)
+summary(RegressBPdom)
+BPreg<-ggplot(subset(AllYearRegress, !is.na(MaxBPdom)), aes(x=MaxBPdom, y=Nutpresence))+geom_point()
+BPreg<-BPreg+geom_smooth(method = "lm", col="black")
+BPreg
+
+#Gramanoid cover and biomass
+Regressgramcov<-lm(Nutpresence ~ Maxgraminoidcov, data= AllYearRegress)
+summary(Regressgramcov)
+Regressgrambio<-lm(Nutpresence ~ graminoidbiomass, data= AllYearRegress)
+summary(Regressgrambio)
+
+#Forb cover and biomass
+Regressforbcov<-lm(Nutpresence ~ Maxforbcov, data= AllYearRegress)
+summary(Regressforbcov)
+
+Regressforbbio<-lm(Nutpresence ~ forbbiomass, data= AllYearRegress)
+summary(Regressforbbio)
+
+#Dom spp
+Regressdomspp<-lm(Nutpresence ~ Maxdomspp1, data= AllYearRegress)
+summary(Regressdomspp)
+
+#Legume biomass
+Regresslegbio<-lm(Nutpresence ~ legumebiomass, data= AllYearRegress)
+summary(Regresslegbio)
+
+#Litter biomass- very significant
+Regresslitterbio<-lm(Nutpresence ~ litterbiomass, data= AllYearRegress)
+summary(Regresslitterbio)
+Litreg<-ggplot(subset(AllYearRegress, !is.na(litterbiomass)), aes(x=litterbiomass, y=Nutpresence))+geom_point()
+Litreg<-Litreg+geom_smooth(method = "lm", col="black")
+Litreg
+
+#Pine needle biomass- very significant
+Regresspneebio<-lm(Nutpresence ~ pineneedlebiomass, data= AllYearRegress)
+summary(Regresspneebio)
+Pneereg<-ggplot(subset(AllYearRegress, !is.na(pineneedlebiomass)), aes(x=pineneedlebiomass, y=Nutpresence))+geom_point()
+Pneereg<-Pneereg+geom_smooth(method = "lm", col="black")
+Pneereg
+
+#woody biomass
+Regresswoodybio<-lm(Nutpresence ~ woodybiomass, data= AllYearRegress)
+summary(Regresswoodybio)
+
 #### Start HERE. Done regressions for N,P,K,Plant leaf Nutrients, Wiregrass cover.####
 #Regressions still needed for ANPP cover, and all Insect variables#
 #### Make an herbivory dataset and set it into the Insect Community. ####
