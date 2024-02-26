@@ -1,6 +1,7 @@
 setwd("~/WillMfiles/Koerner Lab/Koerner Lab/R Studio files/Grad Research")
 library(tidyverse)
 
+VacInsect_2022 <- read.csv("D-Vac LLP Insect ID (2022).csv", stringsAsFactors = F)
 VacInsect_2021 <- read.csv("D-Vac LLP Insect ID (2021).csv")
 VacInsect_2020 <- read.csv("D-Vac LLP Insect ID (2020).csv")
 library(tidyverse)
@@ -47,6 +48,71 @@ library(MuMIn)
 
 
 ####Insect Data####
+Vac_22Clean<-VacInsect_2022%>%
+  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
+  mutate(Year=paste('2022')) %>%
+  filter(Order!="Body parts") %>%
+  filter(Order!="Body Parts")%>%
+  group_by(Plot, Treatment, Order_Family, Year, Time.Point) %>%
+  summarise(FamCount=length(Order_Family)) %>%
+  ungroup() %>%
+  select(-Treatment) %>%
+  pivot_wider(names_from = Order_Family, values_from = FamCount)
+
+Vac_Ord22Clean<-VacInsect_2022%>%
+  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
+  mutate(Year=paste('2022')) %>%
+  filter(Order!="Body parts") %>%
+  filter(Order!="Body Parts")%>%
+  group_by(Plot, Treatment, Order, Year, Time.Point) %>%
+  summarise(OrdCount=length(Order)) %>%
+  ungroup()%>%
+  select(-Treatment)
+  pivot_wider(names_from = Order, values_from = OrdCount)
+
+Vacord22<-left_join(Vac_Ord22Clean, Converted, by="Plot")
+  
+  
+  
+
+Allregress22<-Allregress22%>%
+  #separate_wider_delim(Year, "-", names = c("Year", "Time.Point")) %>%
+  #separate_wider_delim(Time.Point, "P", names = c("T", "Time.Point")) %>%
+  #select(-T)
+ mutate(Time.Pointcorrected=as.integer(Allregress22$Time.Point))%>%
+ select(-Time.Point)
+ 
+Regress22<-Allregress22 %>%
+  filter(year=="2022")%>%
+  select(-"Year")%>%
+  rename(Time.Point=Time.Pointcorrected)
+  
+ 
+ 
+InsectbyNutHerb<-left_join(Vac_22Clean, Allregress22, by=c("Plot", "Time.Point", "Year"))
+
+OrdvyNutHerb22<-left_join(Vac_Ord22Clean, Allregress22, by=c("Plot", "Time.Point", "Year"))
+
+OrderbyHerbivory22<-merge(Vacord22, Herb22, by=c("Plot", "Year", "Time.Point"), all= TRUE)
+
+####Insect Community(Order) by HerbDam22####
+OrdbyHerbDam22<-left_join(Herb22,Regress22, by=c("Plot", "Time.Point")) %>%
+  select(-Year)
+
+OrderbyHerbivory<-lm(totaldam ~ Araneae:Psocodea, data = OrdvyNutHerb22)
+summary(NewRegressN22)
+
+Nregnut22<-ggplot(Allregress22, aes(x=N, y=Nutpresence))+geom_point()
+Nregnut22<-Nregnut22+geom_smooth(method = "lm", col="black")
+Nregnut22
+
+
+
+#Separate#
+
+
+
+
 Vac_21Clean<-VacInsect_2021%>%
   mutate(Order_Family=paste(Order, Family, sep="_")) %>%
   mutate(Year=paste('2021')) %>%
@@ -229,6 +295,34 @@ HerbCon21<- Herb21Stretch %>%
   mutate(Treatment_Year=paste(Treatment, Year, sep="_"))
 
 
+Herb22<-read.csv("Mann_Leaf_Damage_Sandhill_Gamelands_2022.csv", na.strings = "") %>%
+  select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
+  drop_na(Plot) %>%
+  group_by(Block, Plot, Treatment, Replicate, Species, Timepoint..1.2.3.) %>%
+  gather(HerbType, HerbPerc,6:11)%>%
+  ungroup() %>%
+  drop_na(HerbPerc) %>%
+  filter(HerbType==c("Chew","Mine.Suck"))%>%
+  filter(HerbPerc!="_") %>%
+  rename(Time.Point=Timepoint..1.2.3.) %>%
+  mutate(Year="22") %>%
+  filter(Plot!="3")%>%
+  filter(Plot!="6") %>%
+  filter(Plot!="14") %>%
+  filter(Plot!="20")%>%
+  filter(Plot!="23") %>%
+  filter(Plot!="27")
+
+Herb22<-Herb22%>%
+  summarise(Block, Plot, Year, Treatment, Time.Point, HerbPerc)%>%
+  group_by(Block, Plot, Year, Treatment, Time.Point) %>%
+  filter(HerbPerc!="_")%>%
+  summarize(totaldam= sum(HerbPerc))%>%
+  ungroup()%>%
+  select(Plot,Year,Time.Point,Treatment,totaldam)
+
+  Herb22$HerbPerc <- as.numeric(Herb22$HerbPerc)
+
 TP1Herb22<-read.csv("Mann_Leaf_Damage_Sandhill_Gamelands_2022.csv", na.strings = "")%>%
   filter(Timepoint..1.2.3.=="1")
 
@@ -398,11 +492,14 @@ HCom2<-full_join(HComp2020_21, TP1Herb22Stretch) %>%
 ####HerbDam####
 
 HerbDam<-HCompall %>%
-  # summarise(Plot, Species, Treatment_Year, HerbType, avgherb, Year, Treatment) %>%
-  group_by(Block, Plot, Species, Year, Treatment, Treatment_Year) %>%
+  summarise(Block, Plot, Year, Treatment, HerbPerc)%>%
+  group_by(Block, Plot, Year, Treatment) %>%
+  filter(HerbPerc!="_")%>%
   summarize(totaldam= sum(HerbPerc))%>%
-  ungroup() %>%
-  select(Block, Plot, Species,Year, Treatment,totaldam)
+  ungroup()
+select(Plot, Species,Year, Treatment,totaldam)
+
+HCompall$HerbPerc <- as.numeric(HCompall$HerbPerc)
 
 HerbDamyears<-HCompallYears %>%
   # summarise(Plot, Species, Treatment_Year, HerbType, avgherb, Year, Treatment) %>%
@@ -549,13 +646,13 @@ NitrogenRegression<- TrueDamage %>%
             FUN=sum) %>%
   rename(Npresence=totaldam)
 
-
-PlantNut22<-read.csv("NutrientsTP2.csv")
+###Nutrients TP2 ####
+PlantNut22<-read.csv("NutrientsTP2.csv", stringsAsFactors = F)
 
 NregressTP2<-left_join(NitrogenRegression,PlantNutTP2)
 
 Allregress22<-left_join(AllRegression22, PlantNutTP2)
-Metrics<- read.csv("PlantCommunityMetrics.csv")
+Metrics<- read.csv("PlantCommunityMetrics.csv", stringsAsFactors = F)
 Allregress22<-left_join(Allregress22, Metrics)
 
 TrueDamageall<-left_join(HerbDamyears, Converted, by=c("Plot","Treatment"))
@@ -1456,7 +1553,6 @@ ggplot(ordination, aes(x=NMDS1, y=NMDS2)) +
   geom_errorbarh(aes(xmin=NMDS1-se1,xmax=NMDS1+se1))+
   scale_color_manual(values=c("#D2B48C","#FF0000", "#4876FF", "#9B30FF","#EEC900", "#FF7600", "#00CD66", "#333333"),
                      labels=c("Control", "Potassium (K)", "Phosphorus (P)", "PK", "Nitrogen (N)", "NK", "NP", "NPK"))
-
 
 
 
