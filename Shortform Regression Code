@@ -1,0 +1,328 @@
+setwd("~/WillMfiles/Koerner Lab/Koerner Lab/R Studio files/Grad Research")
+library(tidyverse)
+library(vegan)
+library(ggplot2)
+
+VacInsect_2022 <- read.csv("D-Vac LLP Insect ID (2022).csv", stringsAsFactors = F)
+VacInsect_2021 <- read.csv("D-Vac LLP Insect ID (2021).csv")
+VacInsect_2020 <- read.csv("D-Vac LLP Insect ID (2020).csv")
+PlantNut22<-read.csv("NutrientsTP2.csv", stringsAsFactors = F)
+Metrics<- read.csv("PlantCommunityMetrics.csv", stringsAsFactors = F) %>%
+  rename(Year=year)%>%
+  mutate(Year=as.character(Year))
+Herb22<-read.csv("Mann_Leaf_Damage_Sandhill_Gamelands_2022.csv", na.strings = "")
+Converted<-read.csv("ConvertedTreat.csv")
+Herb20<-read.csv("Entered Sandhills Leaf Damage Data_2020.csv", na.strings = "") %>%
+  mutate(Year="20")
+
+Herb20Stretch<- Herb20 %>%
+  select(-Notes)%>%
+  drop_na(Plot) %>%
+  group_by(Block, Plot, Treatment, Replicate, Species) %>%
+  gather(HerbType, HerbPerc,6:11)%>%
+  ungroup() %>%
+  drop_na(HerbPerc) %>%
+  select(Block, Plot, Treatment, Replicate, Species, HerbType, HerbPerc, Year) %>%
+  filter(Species!="Chrysopsis_mariana")%>%
+  filter(Species!="Lespedeza_hirta") %>%
+  filter(HerbType==c("Chew","Mine.Suck")) %>%
+  mutate(Time.Point="2")
+
+Herb21<-read.csv("Entered Sandhills Leaf Damage Data_2021.csv", na.strings = "") %>%
+  mutate(Year="21")
+
+Herb21Stretch<- Herb21 %>%
+  select(-Notes)%>%
+  drop_na(Plot) %>%
+  group_by(Block, Plot, Treatment, Rep, Species) %>%
+  gather(HerbType, HerbPerc,6:11)%>%
+  ungroup() %>%
+  drop_na(HerbPerc) %>%
+  filter(HerbType==c("Chew","Mine.Suck")) %>%
+  rename(Replicate=Rep) %>%
+  mutate(Time.Point="2")
+
+#Peak22Stretch<- PeakHerb22 %>%
+  #select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
+  #drop_na(Plot) %>%
+  #group_by(Block, Plot, Treatment, Replicate, Species) %>%
+  #gather(HerbType, HerbPerc,6:11)%>%
+  #ungroup() %>%
+  #drop_na(HerbPerc) %>%
+  #filter(HerbType==c("Chew","Mine.Suck")) %>%
+  #select(-Timepoint..1.2.3.) %>%
+  #filter(HerbPerc!="_")
+
+StretchAll22<- Herb22 %>%
+  select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
+  drop_na(Plot) %>%
+  group_by(Block, Plot, Treatment, Replicate, Species) %>%
+  gather(HerbType, HerbPerc,6:11)%>%
+  ungroup() %>%
+  drop_na(HerbPerc) %>%
+  filter(HerbType==c("Chew","Mine.Suck")) %>%
+  mutate_(Year="22")%>%
+  mutate(Time.Point=as.numeric(Timepoint..1.2.3.))%>%
+  select(-Timepoint..1.2.3.) %>%
+  filter(HerbPerc!="_")
+
+StretchAll22 <- StretchAll22 %>%  
+  mutate(HerbPerc = as.numeric(HerbPerc))%>%
+  mutate(Year= as.character(StretchAll22$Year))
+
+HComp2020_21<- full_join(Herb20Stretch, Herb21Stretch) %>%
+  mutate(Year= as.character(HComp2020_21$Year)) %>%
+  mutate(Time.Point=as.double(HComp2020_21$Time.Point))
+
+HCompall<-full_join(HComp2020_21, StretchAll22)%>%
+  mutate(Time.Point=as.character(Time.Point))
+
+HCompall<-full_join(HCompall, Herb23Stretch)%>%
+  filter(HerbType==c("Chew","Mine.Suck")) %>%
+  group_by(Block, Plot, Treatment, Species, HerbType, Year) %>%
+  ungroup() %>%
+  filter(Species!="Chrysopsis_mariana")%>%
+  filter(Species!="Lespedeza_hirta") %>%
+  filter(Species!="Dichanthelium_commutatum") %>%
+  mutate(Treatment_Year=paste(Treatment, Year, sep="_"))
+
+
+HerbDam<-HCompall %>%
+  summarise(Block, Plot, Year, Treatment, HerbPerc, Time.Point)%>%
+  group_by(Block, Plot, Year, Treatment, Time.Point) %>%
+  filter(HerbPerc!="_")%>%
+  summarize(totaldam= sum(HerbPerc))%>%
+  ungroup()
+select(Plot, Species,Year, Treatment,totaldam)
+
+HCompall$HerbPerc <- as.numeric(HCompall$HerbPerc)
+TrueDamage<-left_join(HerbDam, Converted, by=c("Plot","Treatment"))%>%
+  filter(Drought!="D")%>%
+  select(-Drought)
+
+
+#loading packages
+install.packages("vegan")
+install.packages("tidyverse")
+install.packages("codyn")
+install.packages("ggplot2")
+install.packages("reshape2")
+install.packages("plotly")
+install.packages("nmle")
+install.packages("lme4")
+install.packages("olsrr")
+install.packages("car")
+install.packages("patchwork")
+install.packages("lmerTest")
+install.packages("piecewiseSEM")
+install.packages("ggrepel")
+install.packages("lavaan")
+install.packages("semPlot")
+install.packages("MuMIn")
+
+library(vegan)
+library(tidyverse)
+library(codyn)
+library(ggplot2)
+library(reshape2)
+library(plotly)
+library(nlme)
+library(lme4)
+library(olsrr)
+library(car)
+library(patchwork)
+library(lmerTest)
+library(piecewiseSEM)
+library(ggrepel)
+library(lavaan)
+library(semPlot)
+library(MuMIn)
+
+
+
+
+####Insect Data####
+Vac_22Clean<-VacInsect_2022%>%
+  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
+  mutate(Year=paste('2022')) %>%
+  filter(Order!="Body parts") %>%
+  filter(Order!="Body Parts")%>%
+  group_by(Plot, Treatment, Order_Family, Year, Time.Point) %>%
+  summarise(FamCount=length(Order_Family)) %>%
+  ungroup() %>%
+  select(-Treatment) %>%
+  pivot_wider(names_from = Order_Family, values_from = FamCount)
+
+Vac_Ord22Clean<-VacInsect_2022%>%
+  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
+  mutate(Year=paste('2022')) %>%
+  filter(Order!="Body parts") %>%
+  filter(Order!="Body Parts")%>%
+  group_by(Plot, Treatment, Order, Year, Time.Point) %>%
+  summarise(OrdCount=length(Order)) %>%
+  ungroup()%>%
+  select(-Treatment)%>%
+  pivot_wider(names_from = Order, values_from = OrdCount)
+
+Vacord22<-left_join(Vac_Ord22Clean, Converted, by="Plot")
+
+
+
+
+Allregress22<-Allregress22%>%
+  #separate_wider_delim(Year, "-", names = c("Year", "Time.Point")) %>%
+  #separate_wider_delim(Time.Point, "P", names = c("T", "Time.Point")) %>%
+  #select(-T)
+  mutate(Time.Pointcorrected=as.integer(Allregress22$Time.Point))%>%
+  select(-Time.Point)
+
+Regress22<-Allregress22 %>%
+  filter(year=="2022")%>%
+  select(-"Year")%>%
+  rename(Time.Point=Time.Pointcorrected)
+
+
+
+InsectbyNutHerb<-left_join(Vac_22Clean, Allregress22, by=c("Plot", "Time.Point", "Year"))
+
+OrdvyNutHerb22<-left_join(Vac_Ord22Clean, Allregress22, by=c("Plot", "Time.Point", "Year"))
+
+OrderbyHerbivory22<-merge(Vacord22, Herb22, by=c("Plot", "Year", "Time.Point"), all= TRUE)
+
+####Insect Community(Order) by HerbDam22####
+OrdbyHerbDam22<-left_join(Herb22,Regress22, by=c("Plot", "Time.Point")) %>%
+  select(-Year)
+
+OrderbyHerbivory<-lm(totaldam ~ Araneae:Psocodea, data = OrdvyNutHerb22)
+summary(NewRegressN22)
+
+Nregnut22<-ggplot(Allregress22, aes(x=N, y=Nutpresence))+geom_point()
+Nregnut22<-Nregnut22+geom_smooth(method = "lm", col="black")
+Nregnut22
+
+#Herbivory#
+
+Herb22<-Herb22 %>%
+  select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
+  drop_na(Plot) %>%
+  group_by(Block, Plot, Treatment, Replicate, Species, Timepoint..1.2.3.) %>%
+  gather(HerbType, HerbPerc,6:11)%>%
+  ungroup() %>%
+  drop_na(HerbPerc) %>%
+  filter(HerbType==c("Chew","Mine.Suck"))%>%
+  filter(HerbPerc!="_") %>%
+  rename(Time.Point=Timepoint..1.2.3.) %>%
+  mutate(Year="22") %>%
+  filter(Plot!="3")%>%
+  filter(Plot!="6") %>%
+  filter(Plot!="14") %>%
+  filter(Plot!="20")%>%
+  filter(Plot!="23") %>%
+  filter(Plot!="27")
+
+Herb22<-Herb22%>%
+  summarise(Block, Plot, Year, Treatment, Time.Point, HerbPerc)%>%
+  group_by(Block, Plot, Year, Treatment, Time.Point) %>%
+  filter(HerbPerc!="_")%>%
+  summarize(totaldam= sum(HerbPerc))%>%
+  ungroup()%>%
+  select(Plot,Year,Time.Point,Treatment,totaldam)
+
+Herb22$HerbPerc <- as.numeric(Herb22$HerbPerc)
+
+Herb23<-read.csv("Mann_Leaf_Damage_2023.csv", na.strings = "")%>%
+  mutate(Year="23")
+
+
+Herb23Stretch<- Herb23 %>%
+  select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
+  drop_na(Plot) %>%
+  group_by(Block, Plot, Treatment, Replicate, Species) %>%
+  gather(HerbType, HerbPerc,6:11)%>%
+  ungroup() %>%
+  drop_na(HerbPerc) %>%
+  filter(HerbType==c("Chew","Mine.Suck")) %>%
+  select(-Timepoint..1.2.3.) %>%
+  filter(HerbPerc!="_") %>%
+  mutate(Time.Point="2")
+
+Herb23Stretch <- Herb23Stretch %>%  
+  mutate(HerbPerc = as.numeric(HerbPerc))
+
+#### Regressions ####
+AllRegression<- TrueDamage %>%
+  #filter(Drought!='D')%>%
+  aggregate(totaldam ~ Nitrogen+Phosphorous+Potassium+Plot+Year+Time.Point,       # Aggregate data
+            FUN=sum) %>%
+  rename(Nutpresence=totaldam) %>%
+  rename(N=Nitrogen)%>%
+  rename(P=Phosphorous)%>%
+  rename(K=Potassium) %>%
+  mutate(Twe=paste("20"))%>%
+  unite(Year,c("Twe","Year"),sep="")
+
+AllRegMetric<-left_join(AllRegression, Metrics, by=c("Plot","Year", "N","P","K"))
+
+#PlantNut22<- PlantNut22
+  #mutate(Twe=paste("20"))%>%
+  #unite(Year,c("Twe","Year"),sep="") %>%
+  #filter(drought!="Drought")%>%
+  #select(-drought)
+
+PlantNutTP2<-PlantNutTP2%>%
+  #separate_wider_delim("Year", "-", names = c("Year", "Time.Point"))
+  #separate_wider_delim(Time.Point, "P", names = c("T", "Time.Point")) %>%
+  #select(-T) %>%
+  #mutate(Twe=paste("20"))%>%
+  #unite(Year,c("Twe","Year"),sep="") %>%
+  filter(Plot!="3")%>%
+  filter(Plot!="6") %>%
+  filter(Plot!="14") %>%
+  filter(Plot!="20")%>%
+  filter(Plot!="23") %>%
+  filter(Plot!="27")
+  mutate(Nperc=as.character(PlantNutTP2$Nperc))
+
+AllYearRegress<-full_join(AllRegMetric,PlantNutTP2, by=c("Plot","Year","Time.Point"))
+
+RegressN <- lm(Nutpresence ~ N, subset(AllYearRegress, Year=="2022"))
+summary(RegressN)
+RegressNperc<-lm(Nutpresence ~ Nperc, subset(AllYearRegress, Year=="2022"))
+summary(RegressNperc)
+
+Nregnut<-ggplot(AllYearRegress, aes(x=Nperc, y=Nutpresence))+geom_point()
+Nregnut<-Nregnut+geom_smooth(method = "lm", col="black")
+Nregnut
+
+
+RegressP <- lm(Nutpresence ~ P, subset(AllYearRegress, Year=="2022"))
+summary(RegressP)
+RegressPperc <- lm(Nutpresence ~ Pperc, subset(AllYearRegress, Year=="2022"))
+summary(RegressPperc)
+
+RegressK <- lm(Nutpresence ~ K, subset(AllYearRegress, Year=="2022"))
+summary(RegressK)
+RegressKperc <- lm(Nutpresence ~ Kperc, subset(AllYearRegress, Year=="2022"))
+summary(RegressKperc)
+
+RegressNMDS1<-lm(Nutpresence ~ MaxNMDS1, subset(AllYearRegress, Year=="2022"))
+summary(RegressNMDS1)
+RegressNMDS2<-lm(Nutpresence ~ MaxNMDS2, subset(AllYearRegress, Year=="2022"))
+summary(RegressNMDS2)
+RegressANPP<-lm(Nutpresence ~ Maxwirecov, data= AllYearRegress, Year=="2022")
+summary(RegressANPP)
+RegressANPP<-lm(Nutpresence ~ Maxwirecov, data= AllYearRegress, Year=="2022")
+summary(RegressANPP)
+#### Start HERE. Done regressions for N,P,K,Plant leaf Nutrients, Wiregrass cover.####
+#Regressions still needed for ANPP cover, and all Insect variables#
+#### Make an herbivory dataset and set it into the Insect Community. ####
+# Perform NMDS on the INSECT COMMUNITY #
+
+
+
+NMDS1reg<-ggplot(AllYearRegress, aes(x=N, y=Nutpresence))+geom_point()
+Nregnut<-Nregnut+geom_smooth(method = "lm", col="black")
+Nregnut
+
+
+
