@@ -2,6 +2,19 @@ setwd("~/WillMfiles/Koerner Lab/Koerner Lab/R Studio files/Grad Research")
 library(tidyverse)
 library(vegan)
 library(ggplot2)
+library(car)
+
+#To do lmer analyses
+model<-lmer(variable~interactions, data)
+#Use the capital 'A' anova function from the car package
+Anova(model, type = 3)
+#You can include/exclude interactions to gain more statistical power in a model
+#The star (*) allows for y~s*t*m*z to show s, t, m, z and the interaction between them and y
+#If you just want the interaction between s and t, but not the base variables, you can do s:t
+#To include this in your full model, you would do y~m*z+s:t
+#If you also wanted to include a s*M interaction, you would do: y~m*z+ s:t +S:m
+
+
 
 VacInsect_2022 <- read.csv("D-Vac LLP Insect ID (2022).csv", stringsAsFactors = F)
 VacInsect_2021 <- read.csv("D-Vac LLP Insect ID (2021).csv")
@@ -419,6 +432,7 @@ HerbFamily<-full_join(HerbNut, Vac_Fam20_22, by=c("Year", "Plot", "Time.Point"))
 
 RegressHerbOrder<-lm(Nutpresence ~ Order, data= HerbOrder)
 summary(RegressHerbOrder)
+anova(RegressHerbOrder)
 Orderreg<-ggplot(subset(HerbOrder, !is.na(Order)), aes(x=Order))+geom_bar()
 Orderreg<-Orderreg+geom_smooth(method = "lm", col="black")
 Orderreg
@@ -469,9 +483,12 @@ summary(RegressNMDS1)
 RegressNMDS2<-lm(Nutpresence ~ MaxNMDS2, subset(AllYearRegress, Year=="2022"))
 summary(RegressNMDS2)
 
-#Wiregrass cover
+#Wiregrass cover- marg. sig
 Regresswirecov<-lm(Nutpresence ~ Maxwirecov, data= AllYearRegress)
 summary(Regresswirecov)
+Wirereg<-ggplot(subset(AllYearRegress, !is.na(Maxwirecov)), aes(x=Maxwirecov, y=Nutpresence))+geom_point()
+Wirereg<-Wirereg+geom_smooth(method = "lm", col="black")
+Wirereg
 
 #Plant Shannon diversity- marginal significance
 RegressShannon<-lm(Nutpresence ~ MaxShannon, data= AllYearRegress)
@@ -532,6 +549,17 @@ Pneereg
 #woody biomass
 Regresswoodybio<-lm(Nutpresence ~ woodybiomass, data= AllYearRegress)
 summary(Regresswoodybio)
+
+
+####Re-do of data tables####
+Regress22<-AllYearRegress%>%
+  filter(Year=="2022")
+RegressNow22 <- lmer(Nutpresence~Time.Point*P +(1|block), data = Regress22)
+anova(RegressNow22, type=3)
+
+
+
+
 
 #### Start HERE. Done regressions for N,P,K,Plant leaf Nutrients, Wiregrass cover.####
 #Regressions still needed for ANPP cover, and all Insect variables#
