@@ -68,27 +68,27 @@ Vac_Ord22Clean<-VacInsect_2022%>%
   summarise(OrdCount=length(Order)) %>%
   ungroup()%>%
   select(-Treatment)
-  pivot_wider(names_from = Order, values_from = OrdCount)
+pivot_wider(names_from = Order, values_from = OrdCount)
 
 Vacord22<-left_join(Vac_Ord22Clean, Converted, by="Plot")
-  
-  
-  
+
+
+
 
 Allregress22<-Allregress22%>%
   #separate_wider_delim(Year, "-", names = c("Year", "Time.Point")) %>%
   #separate_wider_delim(Time.Point, "P", names = c("T", "Time.Point")) %>%
   #select(-T)
- mutate(Time.Pointcorrected=as.integer(Allregress22$Time.Point))%>%
- select(-Time.Point)
- 
+  mutate(Time.Pointcorrected=as.integer(Allregress22$Time.Point))%>%
+  select(-Time.Point)
+
 Regress22<-Allregress22 %>%
   filter(year=="2022")%>%
   select(-"Year")%>%
   rename(Time.Point=Time.Pointcorrected)
-  
- 
- 
+
+
+
 InsectbyNutHerb<-left_join(Vac_22Clean, Allregress22, by=c("Plot", "Time.Point", "Year"))
 
 OrdvyNutHerb22<-left_join(Vac_Ord22Clean, Allregress22, by=c("Plot", "Time.Point", "Year"))
@@ -321,7 +321,7 @@ Herb22<-Herb22%>%
   ungroup()%>%
   select(Plot,Year,Time.Point,Treatment,totaldam)
 
-  Herb22$HerbPerc <- as.numeric(Herb22$HerbPerc)
+Herb22$HerbPerc <- as.numeric(Herb22$HerbPerc)
 
 TP1Herb22<-read.csv("Mann_Leaf_Damage_Sandhill_Gamelands_2022.csv", na.strings = "")%>%
   filter(Timepoint..1.2.3.=="1")
@@ -384,7 +384,7 @@ TP3Herb22Stretch <- TP3Herb22Stretch %>%
 
 
 
-Herb23<-read.csv("Mann_Leaf_Damage_Sandhill_Gamelands_2023.csv", na.strings = "")%>%
+Herb23<-read.csv("Mann_Leaf_Damage_2023.csv", na.strings = "")%>%
   mutate(Year="23")
 
 
@@ -397,7 +397,8 @@ Herb23Stretch<- Herb23 %>%
   drop_na(HerbPerc) %>%
   filter(HerbType==c("Chew","Mine.Suck")) %>%
   select(-Timepoint..1.2.3.) %>%
-  filter(HerbPerc!="_")
+  filter(HerbPerc!="_") %>%
+  mutate(Time.Point="2")
 
 Herb23Stretch <- Herb23Stretch %>%  
   mutate(HerbPerc = as.numeric(HerbPerc))
@@ -438,11 +439,8 @@ HComp2020_21<- full_join(Herb20Stretch, Herb21Stretch)
 
 ####Hcompall####
 
-H20n22<-left_join(Peak22Stretch, Herb20Stretch)
 
-
-
-HCompall<-full_join(HComp2020_21, Peak22Stretch) %>%
+HCompall<-full_join(HComp2020_21, StretchAll22) %>%
   filter(HerbType==c("Chew","Mine.Suck")) %>%
   group_by(Block, Plot, Treatment, Species, HerbType, Year) %>%
   ungroup() %>%
@@ -730,7 +728,7 @@ summary(RegressN22TP3)
 RegressP22 <- lm(Ppresence ~ P, data = Pregress22)
 summary(RegressP22)
 
-Pregressgraph22<-ggplot(Pregress22, aes(x=P, y=Ppresence))+geom_point()
+Pregressgraph22<-ggplot(Pregress22, aes(x=Pperc, y=Ppresence))+geom_point()
 Pregressgraph22<-Pregressgraph22+geom_smooth(method = "lm", col="black")
 Pregressgraph22
 
@@ -1553,6 +1551,5 @@ ggplot(ordination, aes(x=NMDS1, y=NMDS2)) +
   geom_errorbarh(aes(xmin=NMDS1-se1,xmax=NMDS1+se1))+
   scale_color_manual(values=c("#D2B48C","#FF0000", "#4876FF", "#9B30FF","#EEC900", "#FF7600", "#00CD66", "#333333"),
                      labels=c("Control", "Potassium (K)", "Phosphorus (P)", "PK", "Nitrogen (N)", "NK", "NP", "NPK"))
-
 
 
