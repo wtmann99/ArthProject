@@ -4,12 +4,12 @@ library(multcomp)
 library(lme4)
 library(lmerTest)
 library(tidyverse)
-
+library(car)
 
 Herb20<-read.csv("Entered Sandhills Leaf Damage Data_2020.csv") %>%
   mutate(Year="20") %>%
   filter(Notes!="sample not found in plot") %>% #remove 115 rows- not true 0s must be removed
-  select (-Notes) %>%
+  #select (-Notes) %>%
   filter(Species!="Chrysopsis_mariana")%>%      #this species not done in subsequent yrs
   filter(Species!="Lespedeza_hirta") %>%
   filter(Species!="Dichanthelium_commutatum") %>% #this species not done in subsequent yrs
@@ -28,7 +28,7 @@ Herb21<-read.csv("Entered Sandhills Leaf Damage Data_2021.csv") %>%
   filter(Notes!="no individuals") %>%
   filter(Notes!="no plants") %>% #remove 41 rows- not true 0s must be removed - WILL check to see if i interpreted the notes correctly here
   filter(Species!="Dichanthelium_commutatum") %>%
-  select (-Notes) %>%
+  #select (-Notes) %>%
   group_by(Year, Block, Plot, Treatment, Replicate, Species) %>%
   pivot_longer(cols= Chew:Other.Fungi, names_to = "HerbType", values_to="HerbPercent") %>%
   ungroup() %>%
@@ -51,7 +51,7 @@ Herb22<-read.csv("Mann_Damage2022_v3.csv") %>%
   filter(Notes!="no plant") %>% #remove 59 rows- not true 0s must be removed - WILL check to see if I interpreted the notes correctly here ALSO what does the "_" mean in notes? Should these be removed too?
   filter(Other.Fungi!="_") %>%
   filter(Species!="Liatris_cokeri") %>%
-  select(-Number, -Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
+  #select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
   group_by(Year, Timepoint, Block, Plot, Treatment, Replicate, Species) %>%
   pivot_longer(cols= Chew:Other.Fungi, names_to = "HerbType", values_to="HerbPercent") %>%
   ungroup() %>%
@@ -67,7 +67,7 @@ Herb23<-read.csv("Mann_Leaf_Damage_2023.csv") %>%
   filter(Notes!="no plants") %>% #remove 43 rows- not true 0s must be removed - WILL check to see if i interpreted the notes correctly here
   filter(Other.Fungi!="_") %>% # removed an additional 30 plants that were not true 0s
   filter(Species!="Liatris_cokeri") %>%
-  select(-Notes, -Date, -Damage.Assesser.s., -Scribe, -Timepoint..1.2.3.)%>%
+  #select(-Notes, -Date, -Damage.Assesser.s., -Scribe, -Timepoint..1.2.3.)%>%
   group_by(Year, Block, Plot, Treatment, Replicate, Species) %>%
   pivot_longer(cols= Chew:Other.Fungi, names_to = "HerbType", values_to="HerbPercent") %>%
   ungroup() %>%
@@ -109,10 +109,9 @@ shapiro.test(DamAll$trans) # Data is NOT normal
 ####Main Analysis -- drop timepoint 1 and 3, and drop D ####
 unique(DamAll$Species)
 DamAll_Nuttrans<- DamAll %>%
-  filter(Timepoint==2) %>%
-  select(-Timepoint) %>%
   filter(Drought!="D") %>%
-  select(-Drought)
+  filter(Timepoint==2)
+  #select(-Timepoint,-Drought)
 
 unique(DamAll_Nuttrans$Species)
 #Make year a factor in the data not the model
@@ -152,14 +151,14 @@ emmeans(Nuttrans, pairwise ~ Nitrogen|Year)
 stderror <- function(x) sd(x)/sqrt(length(x))
 MeansYrXSp<-DamAll_Nuttrans %>%
   group_by(Year, Species) %>%
-  summarise(mean=mean(totaldam), se=stderror(totaldam))
+  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
 
 cols <- c("#EEA236", "#5CB85C", "#46B8DA", "#9632B8")
 
-YrXSp<-ggplot(MeansYrXSp, aes(x = as.numeric(Year), y = mean, color = Species)) +
+YrXSp<-ggplot(MeansYrXSp, aes(x = as.numeric(Year), y = AverageHerbivory, color = Species)) +
   geom_point() +
   geom_line() +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.2)+
+  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
   scale_color_manual(values = cols)+
   theme_classic()+
   theme(legend.position = c(0.2, 0.8))
