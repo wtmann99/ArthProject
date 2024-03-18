@@ -1,0 +1,328 @@
+setwd("C:/Users/wtmann/OneDrive - UNCG/Documents/WillMfiles/Koerner Lab/Koerner Lab/R Studio files/Grad Research/Mann_Analyses")
+#Or whatever the local branch is
+library(multcomp)
+library(lme4)
+library(lmerTest)
+library(tidyverse)
+
+
+Herb20<-read.csv("Entered Sandhills Leaf Damage Data_2020.csv") %>%
+  mutate(Year="20") %>%
+  filter(Notes!="sample not found in plot") %>% #remove 115 rows- not true 0s must be removed
+  select (-Notes) %>%
+  filter(Species!="Chrysopsis_mariana")%>%      #this species not done in subsequent yrs
+  filter(Species!="Lespedeza_hirta") %>%
+  filter(Species!="Dichanthelium_commutatum") %>% #this species not done in subsequent yrs
+  group_by(Year, Block, Plot, Treatment, Replicate, Species) %>%
+  pivot_longer(cols= Chew:Other.Fungi, names_to = "HerbType", values_to="HerbPercent") %>%
+  ungroup() %>%
+  filter(HerbType==c("Chew", "Mine.Suck")) %>%
+  group_by(Year, Block, Plot, Treatment, Replicate, Species) %>%
+  summarize(totaldam=sum(HerbPercent)) %>%
+  mutate(Timepoint=2)
+unique(Herb20$Species)
+
+Herb21<-read.csv("Entered Sandhills Leaf Damage Data_2021.csv") %>%
+  mutate(Year="21") %>%
+  rename(Replicate=Rep) %>%
+  filter(Notes!="no individuals") %>%
+  filter(Notes!="no plants") %>% #remove 41 rows- not true 0s must be removed - WILL check to see if i interpreted the notes correctly here
+  filter(Species!="Dichanthelium_commutatum") %>%
+  select (-Notes) %>%
+  group_by(Year, Block, Plot, Treatment, Replicate, Species) %>%
+  pivot_longer(cols= Chew:Other.Fungi, names_to = "HerbType", values_to="HerbPercent") %>%
+  ungroup() %>%
+  filter(HerbType==c("Chew", "Mine.Suck")) %>%
+  group_by(Year, Block, Plot, Treatment, Replicate, Species) %>%
+  summarize(totaldam=sum(HerbPercent))%>%
+  mutate(Timepoint=2)
+unique(Herb21$Species)
+
+Herb22<-read.csv("Mann_Damage2022_v3.csv") %>%
+  mutate(Year="22") %>%
+  filter(Notes!="None found") %>%
+  filter(Notes!="no plants") %>%
+  filter(Notes!="No Plant") %>%
+  filter(Notes!="No Plants") %>%
+  filter(Notes!="No plants") %>%
+  filter(Notes!="No plamts") %>%
+  filter(Notes!=" No plants") %>%
+  filter(Notes!="no mature plants") %>%
+  filter(Notes!="no plant") %>% #remove 59 rows- not true 0s must be removed - WILL check to see if I interpreted the notes correctly here ALSO what does the "_" mean in notes? Should these be removed too?
+  filter(Other.Fungi!="_") %>%
+  filter(Species!="Liatris_cokeri") %>%
+  select(-Number, -Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
+  group_by(Year, Timepoint, Block, Plot, Treatment, Replicate, Species) %>%
+  pivot_longer(cols= Chew:Other.Fungi, names_to = "HerbType", values_to="HerbPercent") %>%
+  ungroup() %>%
+  mutate(HerbPercent=as.numeric(HerbPercent)) %>%
+  filter(HerbType==c("Chew", "Mine.Suck")) %>%
+  group_by(Year, Timepoint, Block, Plot, Treatment, Replicate, Species) %>%
+  summarize(totaldam=sum(HerbPercent))
+unique(Herb22$Species)
+
+Herb23<-read.csv("Mann_Leaf_Damage_2023.csv") %>%
+  mutate(Year="23") %>%
+  filter(Notes!="No plants") %>%
+  filter(Notes!="no plants") %>% #remove 43 rows- not true 0s must be removed - WILL check to see if i interpreted the notes correctly here
+  filter(Other.Fungi!="_") %>% # removed an additional 30 plants that were not true 0s
+  filter(Species!="Liatris_cokeri") %>%
+  select(-Notes, -Date, -Damage.Assesser.s., -Scribe, -Timepoint..1.2.3.)%>%
+  group_by(Year, Block, Plot, Treatment, Replicate, Species) %>%
+  pivot_longer(cols= Chew:Other.Fungi, names_to = "HerbType", values_to="HerbPercent") %>%
+  ungroup() %>%
+  mutate(HerbPercent=as.numeric(HerbPercent)) %>%
+  filter(HerbType==c("Chew", "Mine.Suck")) %>%
+  group_by(Year, Block, Plot, Treatment, Replicate, Species) %>%
+  summarize(totaldam=sum(HerbPercent))%>%
+  mutate(Timepoint=2)
+unique(Herb23$Species)
+
+Converted<-read.csv("ConvertedTreat.csv")
+
+DamAll<-full_join(Herb20, Herb21) %>%
+  full_join(Herb22) %>%
+  full_join(Herb23) %>%
+  full_join(Converted) %>%
+  filter(Species != "NA") %>%
+  group_by(Year, Timepoint, Block, Plot, Species, Treatment,
+           Nitrogen, Phosphorous, Potassium, Drought) %>% #dropping Pseudo replicates
+  summarise(totaldam = if(all(is.na(totaldam))) NA_real_ else mean(totaldam, na.rm = TRUE)) %>%
+  filter(Species!="Chrysopsis_mariana") %>% #filterout unsed species that are not consistent across yrs
+  filter(Species!="Dichanthelium_commutatum") %>%
+  filter(Species!="Lespedeza_hirta") %>%
+  filter(Species!="Liatris_cokeri")
+
+
+#WILL - DamAll is now your full complete herbivore damage by insects dataset
+hist(DamAll$totaldam)
+shapiro.test(DamAll$totaldam) # Data is NOT normal
+
+DamAll<-DamAll %>%
+  mutate(trans=log1p(totaldam)) ###log(x+1) Box-cox
+hist(DamAll$trans) #better, still not great, but I think good enough
+shapiro.test(DamAll$trans) # Data is NOT normal
+
+
+####Do all analyses on (1) transformed data, (2) just the four core species that are in every single year, (3) averaged across pseudoreplicates within a plot
+
+####Main Analysis -- drop timepoint 1 and 3, and drop D ####
+unique(DamAll$Species)
+DamAll_Nuttrans<- DamAll %>%
+  filter(Timepoint==2) %>%
+  select(-Timepoint) %>%
+  filter(Drought!="D") %>%
+  select(-Drought)
+
+unique(DamAll_Nuttrans$Species)
+#Make year a factor in the data not the model
+unique(DamAll_Nuttrans$Species)
+
+Nuttrans<-lmerTest::lmer(data=DamAll_Nuttrans,
+                         trans~Year*Species*Nitrogen*Phosphorous*Potassium+ (1|Block)+ (1|Plot:Year))
+#check this with and with out the plot factor being in there
+Nuttrans
+anova(Nuttrans, type=3)
+
+###With Plot- Marginal Year*all significance,Significant Year*Species and Nitrogen, Very signif. Species and Year
+###Without Plot- Same
+
+library(performance)
+library(emmeans)
+
+emmeans(Nuttrans, pairwise ~ Nitrogen, adjust="holm")
+### N is definitively herbivorized less than Control in all years
+
+emmeans(Nuttrans, pairwise ~ Species, adjust="holm")
+### Across all years, Aristida and Pteridium are different from all other species
+### Pityopsis and Vaccinium are different from both Aristida and Pteridium, but not from each other
+
+emmeans(Nuttrans, pairwise ~ Species|Year)
+### 2020-Aristida different from all, but other species the same
+### 2021-Aristida different from Pityopsis and Pteridium, not Vaccinium. Pteridium different than Vaccinium and Aristida
+### 2022-Aristida is different than Pteridium
+### 2023-Marginal difference between Aristida and Pteridium
+
+emmeans(Nuttrans, pairwise ~ Nitrogen|Year)
+### 2020 is different in Control vs Nitrogen. Nitrogen herbivorized less
+### Other years are the same in Control vs Nitrogen. In 2023, they may have started to diverge again
+
+##OK for this analysis, we should put these anova results in a table AND then show a graph of SpeciesxYear (Year on x-axis, totaldam on y and different color lines with the species) AND then show N
+#for species x yr graph
+stderror <- function(x) sd(x)/sqrt(length(x))
+MeansYrXSp<-DamAll_Nuttrans %>%
+  group_by(Year, Species) %>%
+  summarise(mean=mean(totaldam), se=stderror(totaldam))
+
+cols <- c("#EEA236", "#5CB85C", "#46B8DA", "#9632B8")
+
+YrXSp<-ggplot(MeansYrXSp, aes(x = as.numeric(Year), y = mean, color = Species)) +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.2)+
+  scale_color_manual(values = cols)+
+  theme_classic()+
+  theme(legend.position = c(0.2, 0.8))
+YrXSp
+###Saved
+
+### for nitrogen
+MeansN<-DamAll_Nuttrans %>%
+  group_by(Nitrogen) %>%
+  summarise(mean=mean(totaldam), se=stderror(totaldam))
+
+N <- ggplot(MeansN, aes(x=Nitrogen, y=mean)) +
+  geom_bar(stat="identity", position=position_dodge(), fill=c("#46B8DA", "#9632B8")) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.2)+
+  theme_classic()
+N
+###Saved
+
+
+###For just looking at drought effects
+DamAll_Drought<- DamAll %>%
+  filter(Treatment %in% c("C", "NPK", "CTRL+Shelter", "NPK+, Shelter")) %>%
+  filter(Year==22) %>% # because this is the only year that drought shelters were sampled right?
+  mutate(Timepoint=as.factor(Timepoint))
+Droughttrans<-lmerTest::lmer(data=DamAll_Drought,
+                             trans~Timepoint*Species*Drought*Nitrogen+ (1|Block))
+Droughttrans
+anova(Droughttrans, type=3)
+### Marginal Timepoint*All and Species, Significant Species*D*N, Very Significant Timepoint and Timepoint*Species
+
+emmeans(Droughttrans, pairwise ~ Drought*Nitrogen|Species, adjust="holm")
+### Aristida- No difference
+### Pityopsis- Marginal Pure Control vs D*N, Significant Pure Drought vs Drought*N; D*N low Herbivory vs Pure Control and Drought Control
+### Pteridium- No difference
+### Vaccinium- No difference
+
+
+#For just looking at seasonal effects
+DamAll_Seasonal<- DamAll %>%
+  filter(Year==22)%>%
+  filter(Drought!="D") %>%
+  mutate(Timepoint=as.factor(Timepoint))
+
+
+Season<-lmerTest::lmer(data=DamAll_Seasonal,
+                       trans~as.factor(Timepoint)*Species*Nitrogen*Phosphorous*Potassium+ (1|Block))
+Season
+anova(Season, type=3)
+### Significant N*P and Potassium, Very Significant Timepoint*Species, Species, Timepoint and Timepoint*All
+
+
+emmeans(Season, pairwise ~ Potassium, adjust="holm")
+### Potassium herbivorized less than Control, supports selective feeding hypothesis
+
+emmeans(Season, pairwise ~ Species|Timepoint, adjust="holm")
+### All different except Pityopsis-Pteridium and Pteridium-Vaccinium in TP1; Aristida herbivorized more
+### Aristida-Pteridium, Pityopsis-Pteridium, and Pteridium-Vaccinium are different in TP2; Pteridium herbivorized more
+### Aristida is different from everything and Pityopsis is different from Pteridium in TP3; Aristida herbivorized less, Pityopsis herbivorized less than Pteridium
+
+emmeans(Season, pairwise ~ Nitrogen*Phosphorous, adjust="holm")
+### Only NC-NP are marginally different. NP is herbivorized the most, NC is herbivorized the least
+
+emmeans(Season, pairwise ~ Nitrogen*Phosphorous*Potassium|Species, adjust="holm")
+### CCC-CPK in Pityopsis is the only significance; CPK is herbivorized less
+
+#ok here show the full interaction graph where each species is its on panel in a graph.
+
+Means<-DamAll_Seasonal %>%
+  group_by(Timepoint, Species, Treatment) %>%
+  summarise(mean=mean(totaldam), se=stderror(totaldam))
+
+Season<-ggplot(Means, aes(x = as.numeric(Timepoint), y = mean, color = Treatment)) +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.2)+
+  theme_classic()+
+  theme(legend.position = c(0.2, 0.8))+
+  facet_wrap(~Species)
+Season
+#not sure this graph is really informative?
+
+
+
+
+
+##### What if we just look at damage reguardless of species ####
+HerbDam<-DamAll %>%
+  group_by(Year, Timepoint, Block, Plot, Treatment,
+           Nitrogen, Phosphorous, Potassium, Drought) %>% #Mean across pseudo-reps and species
+  summarise(totaldam = mean(totaldam))
+
+hist(HerbDam$totaldam)
+shapiro.test(HerbDam$totaldam)# Data is normal!!!
+####No? I have questions about this. More normal? Yes. Normal? No. p-value is still mich smaller than 0.05####
+
+HerbDam<-HerbDam %>%
+  mutate(trans=log1p(totaldam))
+
+hist(HerbDam$trans)
+shapiro.test(HerbDam$trans)
+
+####Main Analysis -- drop timepoint 1 and 3, and drop D
+DamAll_Nuttrans<- HerbDam %>%
+  filter(Timepoint==2) %>%
+  select(-Timepoint) %>%
+  filter(Drought!="D") %>%
+  select(-Drought)
+
+#Make year a factor in the data not the model
+
+Nuttrans<-lmerTest::lmer(data=DamAll_Nuttrans,
+                         totaldam~Year*Nitrogen*Phosphorous*Potassium+ (1|Block))
+#check this with and with out the plot factor being in there
+Nuttrans
+anova(Nuttrans, type=3)
+
+library(performance)
+library(emmeans)
+
+emmeans(Nuttrans, pairwise ~ Year, adjust="holm")
+emmeans(Nuttrans, pairwise ~ Nitrogen, adjust="holm")
+emmeans(Nuttrans, pairwise ~ Nitrogen*Phosphorous|Potassium)
+
+### for nitrogen
+MeansN<-DamAll_Nuttrans %>%
+  group_by(Nitrogen) %>%
+  summarise(mean=mean(totaldam), se=stderror(totaldam))
+
+N <- ggplot(MeansN, aes(x=Nitrogen, y=mean)) +
+  geom_bar(stat="identity", position=position_dodge(), fill=c("#46B8DA", "#9632B8")) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.2)+
+  theme_classic()
+N
+
+
+
+###For just looking at drought effects
+DamAll_Drought<- HerbDam %>%
+  filter(Treatment %in% c("C", "NPK", "CTRL+Shelter", "NPK+, Shelter")) %>%
+  filter(Year==22) %>% # because this is the only year that drought shelters were sampled right?
+  mutate(Timepoint=as.factor(Timepoint))
+Droughttrans<-lmerTest::lmer(data=DamAll_Drought,
+                             totaldam~Timepoint*Drought*Nitrogen+ (1|Block))
+Droughttrans
+anova(Droughttrans, type=3)
+
+
+emmeans(Droughttrans, pairwise ~ Timepoint, adjust="holm")
+
+
+
+#For just looking at seasonal effects
+DamAll_Seasonal<- HerbDam %>%
+  filter(Year==22)%>%
+  filter(Drought!="D") %>%
+  mutate(Timepoint=as.factor(Timepoint))
+
+
+Season<-lmerTest::lmer(data=DamAll_Seasonal,
+                       totaldam~as.factor(Timepoint)*Nitrogen*Phosphorous*Potassium+ (1|Block))
+Season
+anova(Season, type=3)
+
+emmeans(Season, pairwise ~ Potassium, adjust="holm")
+emmeans(Season, pairwise ~ Timepoint, adjust="holm")
+emmeans(Season, pairwise ~ Phosphorous, adjust="holm")
