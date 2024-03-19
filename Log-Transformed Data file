@@ -105,7 +105,7 @@ shapiro.test(DamAll$trans) # Data is NOT normal
 
 
 ####Do all analyses on (1) transformed data, (2) just the four core species that are in every single year, (3) averaged across pseudoreplicates within a plot
-
+DamAllSave<-DamAll
 ####Main Analysis -- drop timepoint 1 and 3, and drop D ####
 unique(DamAll$Species)
 DamAll_Nuttrans<- DamAll %>%
@@ -121,14 +121,20 @@ Nuttrans<-lmerTest::lmer(data=DamAll_Nuttrans,
                          trans~Year*Species*Nitrogen*Phosphorous*Potassium+ (1|Block)+ (1|Plot:Year))
 #check this with and with out the plot factor being in there
 Nuttrans
-anova(Nuttrans, type=3)
+Anova(Nuttrans, type=3)
 
+Nuttrans2<-lmerTest::lmer(data=DamAll_Nuttrans,
+                         trans~Year*Species*Nitrogen+ (1|Block)+ (1|Plot:Year))
+#check this with and with out the plot factor being in there
+Nuttrans2
+anova(Nuttrans2, type=3)
+Anova(Nuttrans2, type = 3)
 ###With Plot- Marginal Year*all significance,Significant Year*Species and Nitrogen, Very signif. Species and Year
 ###Without Plot- Same
 
 library(performance)
 library(emmeans)
-
+##Nuttrans##
 emmeans(Nuttrans, pairwise ~ Nitrogen, adjust="holm")
 ### N is definitively herbivorized less than Control in all years
 
@@ -145,6 +151,16 @@ emmeans(Nuttrans, pairwise ~ Species|Year)
 emmeans(Nuttrans, pairwise ~ Nitrogen|Year)
 ### 2020 is different in Control vs Nitrogen. Nitrogen herbivorized less
 ### Other years are the same in Control vs Nitrogen. In 2023, they may have started to diverge again
+
+emmeans(Nuttrans, pairwise ~ Species|Phosphorous)
+
+
+emmeans(Nuttrans, pairwise ~ Nitrogen|Year)
+
+
+emmeans(Nuttrans, pairwise ~ Nitrogen|Year)
+
+
 
 ##OK for this analysis, we should put these anova results in a table AND then show a graph of SpeciesxYear (Year on x-axis, totaldam on y and different color lines with the species) AND then show N
 #for species x yr graph
@@ -187,6 +203,7 @@ Droughttrans<-lmerTest::lmer(data=DamAll_Drought,
                              trans~Timepoint*Species*Drought*Nitrogen+ (1|Block))
 Droughttrans
 anova(Droughttrans, type=3)
+Anova(Droughttrans, type = 3)
 ### Marginal Timepoint*All and Species, Significant Species*D*N, Very Significant Timepoint and Timepoint*Species
 
 emmeans(Droughttrans, pairwise ~ Drought*Nitrogen|Species, adjust="holm")
@@ -207,6 +224,7 @@ Season<-lmerTest::lmer(data=DamAll_Seasonal,
                        trans~as.factor(Timepoint)*Species*Nitrogen*Phosphorous*Potassium+ (1|Block))
 Season
 anova(Season, type=3)
+Anova(Season, type = 3)
 ### Significant N*P and Potassium, Very Significant Timepoint*Species, Species, Timepoint and Timepoint*All
 
 
@@ -253,7 +271,7 @@ HerbDam<-DamAll %>%
 hist(HerbDam$totaldam)
 shapiro.test(HerbDam$totaldam)# Data is normal!!!
 ####No? I have questions about this. More normal? Yes. Normal? No. p-value is still mich smaller than 0.05####
-
+####Herbdam transformation code HERE ####
 HerbDam<-HerbDam %>%
   mutate(trans=log1p(totaldam))
 
@@ -307,6 +325,8 @@ anova(Droughttrans, type=3)
 
 
 emmeans(Droughttrans, pairwise ~ Timepoint, adjust="holm")
+
+emmeans(Droughttrans, pairwise ~ Drought*Nitrogen|Species, adjust="holm")
 
 
 
