@@ -1,6 +1,7 @@
 setwd("~/WillMfiles/Koerner Lab/Koerner Lab/R Studio files/Grad Research")
 library(tidyverse)
 
+VacInsect_2023 <- read.csv("D-Vac LLP Insect ID (2023).csv", stringsAsFactors = F)
 VacInsect_2022 <- read.csv("D-Vac LLP Insect ID (2022).csv", stringsAsFactors = F)
 VacInsect_2021 <- read.csv("D-Vac LLP Insect ID (2021).csv")
 VacInsect_2020 <- read.csv("D-Vac LLP Insect ID (2020).csv")
@@ -67,8 +68,8 @@ Vac_Ord22Clean<-VacInsect_2022%>%
   group_by(Plot, Treatment, Order, Year, Time.Point) %>%
   summarise(OrdCount=length(Order)) %>%
   ungroup()%>%
-  select(-Treatment)
-pivot_wider(names_from = Order, values_from = OrdCount)
+  select(-Treatment)%>%
+  pivot_wider(names_from = Order, values_from = OrdCount)
 
 Vacord22<-left_join(Vac_Ord22Clean, Converted, by="Plot")
 
