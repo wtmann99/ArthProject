@@ -2,11 +2,14 @@ setwd("~/WillMfiles/Koerner Lab/Koerner Lab/R Studio files/Grad Research")
 library(tidyverse)
 
 VacInsect_2023 <- read.csv("D-Vac LLP Insect ID (2023).csv", stringsAsFactors = F)
-VacInsect_2022 <- read.csv("D-Vac LLP Insect ID (2022).csv", stringsAsFactors = F)
+VacInsect_2022 <- read.csv("D-Vac LLP Insect ID (2022).csv", stringsAsFactors = F) %>%
+  select(-X)
 VacInsect_2021 <- read.csv("D-Vac LLP Insect ID (2021).csv")
 VacInsect_2020 <- read.csv("D-Vac LLP Insect ID (2020).csv")
 library(tidyverse)
-
+HerbTrans<-read.csv("HerbDam_trans.csv")
+OrderYears<-read.csv("OrderYearsFinal.csv")
+FamYears<-read.csv("FamYearsFinal.csv")
 
 #loading packages
 install.packages("vegan")
@@ -49,6 +52,60 @@ library(MuMIn)
 
 
 ####Insect Data####
+
+##2020##
+Vac_20Clean<-VacInsect_2020%>%
+  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
+  mutate(Year=paste('2020')) %>%
+  mutate(Time.Point=paste('2'))%>%
+  filter(Order!="Body parts") %>%
+  filter(Order!="Body Parts")%>%
+  group_by(Plot, Treatment, Order_Family, Year, Time.Point) %>%
+  summarise(FamCount=length(Order_Family)) %>%
+  ungroup() %>%
+  select(-Treatment) %>%
+  pivot_wider(names_from = Order_Family, values_from = FamCount)
+
+Vac_Ord20Clean<-VacInsect_2020%>%
+  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
+  mutate(Year=paste('2020')) %>%
+  mutate(Time.Point=paste('2'))%>%
+  filter(Order!="Body parts") %>%
+  filter(Order!="Body Parts")%>%
+  group_by(Plot, Treatment, Order, Year, Time.Point) %>%
+  summarise(OrdCount=length(Order)) %>%
+  ungroup()%>%
+  select(-Treatment)%>%
+  pivot_wider(names_from = Order, values_from = OrdCount)
+
+
+##2021##
+Vac_21Clean<-VacInsect_2021%>%
+  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
+  mutate(Year=paste('2021')) %>%
+  mutate(Time.Point=paste('2'))%>%
+  filter(Order!="Body parts") %>%
+  filter(Order!="Body Parts")%>%
+  group_by(Plot, Treatment, Order_Family, Year, Time.Point) %>%
+  summarise(FamCount=length(Order_Family)) %>%
+  ungroup() %>%
+  select(-Treatment) %>%
+  pivot_wider(names_from = Order_Family, values_from = FamCount)
+
+Vac_Ord21Clean<-VacInsect_2021%>%
+  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
+  mutate(Year=paste('2021')) %>%
+  mutate(Time.Point=paste('2'))%>%
+  filter(Order!="Body parts") %>%
+  filter(Order!="Body Parts")%>%
+  group_by(Plot, Treatment, Order, Year, Time.Point) %>%
+  summarise(OrdCount=length(Order)) %>%
+  ungroup()%>%
+  select(-Treatment)%>%
+  pivot_wider(names_from = Order, values_from = OrdCount)
+
+
+##2022##
 Vac_22Clean<-VacInsect_2022%>%
   mutate(Order_Family=paste(Order, Family, sep="_")) %>%
   mutate(Year=paste('2022')) %>%
@@ -60,19 +117,84 @@ Vac_22Clean<-VacInsect_2022%>%
   select(-Treatment) %>%
   pivot_wider(names_from = Order_Family, values_from = FamCount)
 
-Vac_Ord22Clean<-VacInsect_2022%>%
-  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
-  mutate(Year=paste('2022')) %>%
-  filter(Order!="Body parts") %>%
-  filter(Order!="Body Parts")%>%
-  group_by(Plot, Treatment, Order, Year, Time.Point) %>%
-  summarise(OrdCount=length(Order)) %>%
-  ungroup()%>%
-  select(-Treatment)%>%
+Vac_Ord22Clean <- VacInsect_2022 %>%
+  mutate(Order_Family = paste(Order, Family, sep = "_"),
+         Year = "2022") %>%
+  filter(Order != "Body parts" & Order != "Body Parts" & Order != "") %>%
+  group_by(Plot, Order, Year, Time.Point) %>%
+  summarise(OrdCount = n()) %>%
+  ungroup() %>%
   pivot_wider(names_from = Order, values_from = OrdCount)
 
-Vacord22<-left_join(Vac_Ord22Clean, Converted, by="Plot")
+##2023##
+Vac_23Clean<-VacInsect_2023%>%
+  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
+  mutate(Year=paste('2023')) %>%
+  mutate(Time.Point=paste('2'))%>%
+  filter(Order!="Body parts") %>%
+  filter(Order!="Body Parts")%>%
+  group_by(Plot, Treatment, Order_Family, Year, Time.Point) %>%
+  summarise(FamCount=length(Order_Family)) %>%
+  ungroup() %>%
+  select(-Treatment) %>%
+  pivot_wider(names_from = Order_Family, values_from = FamCount)
 
+Vac_Ord23Clean <- VacInsect_2023 %>%
+  mutate(Order_Family = paste(Order, Family, sep = "_"),
+         Year = "2023") %>%
+  mutate(Time.Point=paste('2'))%>%
+  filter(Order != "Body parts" & Order != "Body Parts" & Order != "") %>%
+  group_by(Plot, Order, Year, Time.Point) %>%
+  summarise(OrdCount = n()) %>%
+  ungroup() %>%
+  pivot_wider(names_from = Order, values_from = OrdCount)
+
+##OrderYear####
+
+VacOrd20_21<-full_join(Vac_Ord20Clean, Vac_Ord21Clean)
+VacOrd20_21$Time.Point <- as.numeric(VacOrd20_21$Time.Point)
+
+Vac_Ord23Clean$Time.Point<-as.numeric(Vac_Ord23Clean$Time.Point)
+
+Vacord22_23<-full_join(Vac_Ord22Clean, Vac_Ord23Clean)
+
+OrderYearsFinal<-full_join(VacOrd20_21,Vacord22_23)
+
+write.csv(OrderYearsFinal, "OrderyearsFinal.csv")
+
+##FamYear####
+Vac20_21<-full_join(Vac_20Clean, Vac_21Clean)
+Vac20_21$Time.Point <- as.numeric(VacOrd20_21$Time.Point)
+
+Vac_23Clean$Time.Point<-as.numeric(Vac_23Clean$Time.Point)
+Vac_22Clean$Araneae_Lycosidae<-as.numeric(as.character(unlist(Vac_22Clean$Araneae_Lycosidae)))
+
+Vac_22Clean <- VacInsect_2022 %>%
+  mutate(Order_Family = paste(Order, Family, sep = "_")) %>%
+  mutate(Year = "2022") %>%
+  filter(Order != "Body parts" & Order != "Body Parts") %>%
+  group_by(Plot, Order_Family, Year, Time.Point) %>%
+  summarise(FamCount = length(Order_Family)) %>%
+  ungroup() %>%
+  pivot_wider(names_from = Order_Family, values_from = FamCount)
+
+
+duplicate_rows <- Vac_22Clean %>%
+  group_by(Plot,Time.Point) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  filter(n > 1L)
+
+
+
+
+
+Vac22_23<-full_join(Vac_22Clean, Vac_23Clean)
+
+
+
+FamYearsFinal<-full_join(Vac20_21,Vac22_23)
+
+write.csv(FamYearsFinal, "FamyearsFinal.csv")
 
 
 
@@ -121,14 +243,20 @@ Vac_21Clean<-VacInsect_2021%>%
   filter(Order!="Body Parts")%>%
   group_by(Plot, Treatment, Order_Family, Year) %>%
   summarise(FamCount=length(Order_Family)) %>%
-  ungroup()
+  ungroup() %>%
+  select(-Treatment) %>%
+  pivot_wider(names_from = Order_Family, values_from = FamCount)
 
-Vac21Comb<-VacInsect_2021 %>%
+Vac_Ord21Clean<-VacInsect_2021%>%
   mutate(Order_Family=paste(Order, Family, sep="_")) %>%
-  mutate(Year=paste('21')) %>%
-  group_by(Plot, Treatment, Order_Family, Order, Family, Year) %>%
-  summarise(FamCount=length(Order_Family)) %>%
-  ungroup()
+  mutate(Year=paste('2021')) %>%
+  filter(Order!="Body parts") %>%
+  filter(Order!="Body Parts")%>%
+  group_by(Plot, Treatment, Order, Year) %>%
+  summarise(OrdCount=length(Order)) %>%
+  ungroup()%>%
+  select(-Treatment)%>%
+  pivot_wider(names_from = Order, values_from = OrdCount)
 
 
 Vac_20Clean<-VacInsect_2020%>%
@@ -1552,5 +1680,4 @@ ggplot(ordination, aes(x=NMDS1, y=NMDS2)) +
   geom_errorbarh(aes(xmin=NMDS1-se1,xmax=NMDS1+se1))+
   scale_color_manual(values=c("#D2B48C","#FF0000", "#4876FF", "#9B30FF","#EEC900", "#FF7600", "#00CD66", "#333333"),
                      labels=c("Control", "Potassium (K)", "Phosphorus (P)", "PK", "Nitrogen (N)", "NK", "NP", "NPK"))
-
 
