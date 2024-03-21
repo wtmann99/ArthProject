@@ -7,7 +7,8 @@ VacInsect_2022 <- read.csv("D-Vac LLP Insect ID (2022).csv", stringsAsFactors = 
 VacInsect_2021 <- read.csv("D-Vac LLP Insect ID (2021).csv")
 VacInsect_2020 <- read.csv("D-Vac LLP Insect ID (2020).csv")
 library(tidyverse)
-HerbTrans<-read.csv("HerbDam_trans.csv")
+write.csv(HerbDam, "HerbDam.csv")
+HerbDamtrans<-read.csv("HerbDam.csv")
 OrderYears<-read.csv("OrderYearsFinal.csv")
 FamYears<-read.csv("FamYearsFinal.csv")
 
@@ -29,6 +30,8 @@ install.packages("ggrepel")
 install.packages("lavaan")
 install.packages("semPlot")
 install.packages("MuMIn")
+install.packages("ggsignif")
+install.packages("ggpubr")
 
 library(vegan)
 library(tidyverse)
@@ -47,7 +50,8 @@ library(ggrepel)
 library(lavaan)
 library(semPlot)
 library(MuMIn)
-
+library(ggsignif)
+library(ggpubr)
 
 
 
@@ -618,12 +622,14 @@ HCom2<-full_join(HComp2020_21, TP1Herb22Stretch) %>%
 
 ####HerbDam####
 
-HerbDam<-HCompall %>%
-  summarise(Block, Plot, Year, Treatment, HerbPerc)%>%
-  group_by(Block, Plot, Year, Treatment) %>%
+HerbDamSpec<-HCompall %>%
+  summarise(Block, Plot, Year, Treatment, HerbPerc, Species, Time.Point)%>%
+  group_by(Block, Plot, Year, Treatment, Species, Time.Point) %>%
   filter(HerbPerc!="_")%>%
   summarize(totaldam= sum(HerbPerc))%>%
-  ungroup()
+  ungroup() %>%
+  mutate(trans=log1p(totaldam)) %>%
+  filter(Species!="Liatris_cokeri")
 select(Plot, Species,Year, Treatment,totaldam)
 
 HCompall$HerbPerc <- as.numeric(HCompall$HerbPerc)
@@ -634,6 +640,51 @@ HerbDamyears<-HCompallYears %>%
   summarize(totaldam= sum(HerbPerc))%>%
   ungroup() %>%
   select(Block, Plot, Species,Year, Treatment,totaldam)
+
+
+
+#### Herbivory Species by Year Graphs ####
+SpecHerbbyYear<-ggplot(data=HerbDamSpec, aes(x=Species, y=totaldam, fill=Treatment)) +
+  geom_boxplot() + geom_signif(comparisons = list(c("C","NP")), map_signif_level = TRUE, annotations = c("***")) + labs(title="Herbivore Damage by Species")
+SpecHerbbyYear
+
+PlantNut<-PlantNut22%>%
+  select(Plot, N, P, K)
+HerbSpecNut<-left_join(PlantNut, HerbDamSpec, by="Plot")
+HerbSpecNut20<-HerbSpecNut%>%
+  filter(Year=="20")
+HerbSpecNut21<-HerbSpecNut%>%
+  filter(Year=="21")
+HerbSpecNut22<-HerbSpecNut%>%
+  filter(Year=="22")
+HerbSpecNut22_1<-HerbSpecNut%>%
+  filter(Year=="22") %>%
+  filter(Time.Point=="1")
+HerbSpecNut22_2<-HerbSpecNut%>%
+  filter(Year=="22") %>%
+  filter(Time.Point=="2")
+HerbSpecNut22_3<-HerbSpecNut%>%
+  filter(Year=="22") %>%
+  filter(Time.Point=="3")
+HerbSpecNut23<-HerbSpecNut%>%
+  filter(Year=="23")
+my_comparisons <- list( c("C", "K"), c("C", "N"), c("C", "P"), c("C", "NP"), c("C", "PK"), c("C", "NK"), c("C", "NPK")   )
+
+
+YearAnalysis2<-ggboxplot(HerbSpecNut23, x="Treatment", y="totaldam", fill = "Treatment", facet.by = "Species", short.panel.labs = FALSE) + theme(legend.position = "right")
+YearAnalysis2#+stat_compare_means(comparisons = my_comparisons, hide.ns = TRUE)
+
+
+YearAnalysis2.1<-ggboxplot(HerbSpecNut22, x="Species", y="totaldam", fill = "Treatment", short.panel.labs = FALSE) + theme(legend.position = "right")
+YearAnalysis2.1+stat_compare_means(aes(group=Treatment),label = "p.format")
+
+
+
+
+ggplot(HerbSpecNut22, aes(x=Treatment, y=totaldam, fill=Treatment) +geom_bar())
+p <- ggplot(HerbSpecNut22, aes(Treatment,totaldam, fill=Treatment)) + geom_col()
+p + facet_grid(Species~Time.Point) +labs(y = "Arthropod Herbivore Damage by Timepoint")
+
 
 
 
@@ -1680,4 +1731,3 @@ ggplot(ordination, aes(x=NMDS1, y=NMDS2)) +
   geom_errorbarh(aes(xmin=NMDS1-se1,xmax=NMDS1+se1))+
   scale_color_manual(values=c("#D2B48C","#FF0000", "#4876FF", "#9B30FF","#EEC900", "#FF7600", "#00CD66", "#333333"),
                      labels=c("Control", "Potassium (K)", "Phosphorus (P)", "PK", "Nitrogen (N)", "NK", "NP", "NPK"))
-
