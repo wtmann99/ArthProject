@@ -111,7 +111,7 @@ unique(DamAll$Species)
 DamAll_Nuttrans<- DamAll %>%
   filter(Drought!="D") %>%
   filter(Timepoint==2)
-  #select(-Timepoint,-Drought)
+#select(-Timepoint,-Drought)
 
 unique(DamAll_Nuttrans$Species)
 #Make year a factor in the data not the model
@@ -124,7 +124,7 @@ Nuttrans
 Anova(Nuttrans, type=3)
 
 Nuttrans2<-lmerTest::lmer(data=DamAll_Nuttrans,
-                         trans~Year*Species*Nitrogen+ (1|Block)+ (1|Plot:Year))
+                          trans~Year*Species*Nitrogen+ (1|Block)+ (1|Plot:Year))
 #check this with and with out the plot factor being in there
 Nuttrans2
 anova(Nuttrans2, type=3)
