@@ -642,8 +642,130 @@ HerbDamyears<-HCompallYears %>%
   select(Block, Plot, Species,Year, Treatment,totaldam)
 
 
+#### Herbivory by Year Graphs ####
+library(emmeans)
+HerbDamYear1<-HerbDamSpec %>%
+  mutate(Year=paste("20",Year, sep="")) %>%
+  rename(year=Year)%>%
+  rename(block=Block)
+HerbDamYear1$year<-as.integer(HerbDamYear1$year)
 
-#### Herbivory Species by Year Graphs ####
+HerbDamYear<-left_join(HerbDamYear1, Metrics, by=c("Plot", "year", "block"))
+
+HerbDamYearNoDrought<-HerbDamYear%>%
+  filter(drought=="C")%>%
+  select(-drought)%>%
+  filter(Time.Point=="2")
+
+HYearsNoDrought<-ggplot(HerbDamYearNoDrought, aes(x=year, y=totaldam, color=Species))+geom_point()
+HYearsNoDrought<-HYearsNoDrought+geom_smooth(method = "lm", col="black")
+HYearsNoDrought
+
+YrXSp<-HerbDamYearNoDrought %>%
+  group_by(year, Species) %>%
+  summarise(AverageHerbivory=mean(trans), se=stderror(trans))
+
+cols <- c("#EEA236", "#5CB85C", "#46B8DA", "#9632B8")
+
+YearrXSp<-ggplot(YrXSp, aes(x = as.numeric(year), y = AverageHerbivory, color = Species)) +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
+  scale_color_manual(values = cols)+
+  theme_classic()+
+  theme(legend.position = c(0.2, 0.8))
+YearrXSp
+#Saved#
+
+NXSp<-HerbDamYearNoDrought %>%
+  group_by(N, Species) %>%
+  summarise(AverageHerbivory=mean(trans), se=stderror(trans))
+
+cols <- c("#EEA236", "#5CB85C", "#46B8DA", "#9632B8")
+
+NsXSp<-ggplot(NXSp, aes(x = N, y = AverageHerbivory, color = Species)) +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
+  scale_color_manual(values = cols)+
+  theme_classic()+
+  theme(legend.position = c(0.2, 0.8))
+NsXSp
+#Saved#
+
+PXSp<-HerbDamYearNoDrought %>%
+  group_by(P, Species) %>%
+  summarise(AverageHerbivory=mean(trans), se=stderror(trans))
+
+cols <- c("#EEA236", "#5CB85C", "#46B8DA", "#9632B8")
+
+PsXSp<-ggplot(PXSp, aes(x = P, y = AverageHerbivory, color = Species)) +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
+  scale_color_manual(values = cols)+
+  theme_classic()+
+  theme(legend.position = c(0.2, 0.8))
+PsXSp
+#Saved#
+
+KXSp<-HerbDamYearNoDrought %>%
+  group_by(K, Species) %>%
+  summarise(AverageHerbivory=mean(trans), se=stderror(trans))
+
+cols <- c("#EEA236", "#5CB85C", "#46B8DA", "#9632B8")
+
+KsXSp<-ggplot(KXSp, aes(x = K, y = AverageHerbivory, color = Species)) +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
+  scale_color_manual(values = cols)+
+  theme_classic()+
+  theme(legend.position = c(0.2, 0.8))
+KsXSp
+#Saved#
+
+
+Yeartrans<-lmerTest::lmer(data=HerbDamYearNoDrought,
+                         trans~year*Species*N*P*K+ (1|block)+ (1|Plot:year))
+#check this with and with out the plot factor being in there
+Yeartrans
+Anova(Yeartrans, type=3)
+
+
+emmeans(Yeartrans, pairwise ~ Species|year)
+
+####Herbivory by Drought and Year####
+HerbDamYear
+
+q <- ggplot(HerbDamYear, aes(Treatment,trans, fill=Treatment)) + geom_col()
+q + facet_grid(Species~year) +labs(y = "Arthropod Herbivore Damage by Year")
+#Saved#
+
+
+HerbSpecNut22
+SpxHerbxTP<-HerbSpecNut22 %>%
+  group_by(Time.Point, Species) %>%
+  summarise(AverageHerbivory=mean(trans), se=stderror(trans))
+
+cols <- c("#EEA236", "#5CB85C", "#46B8DA", "#9632B8")
+
+SpxHerbxTPxDrt<-ggplot(SpxHerbxTP, aes(x = as.numeric(Time.Point), y = AverageHerbivory, color = Species)) +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
+  scale_color_manual(values = cols)+
+  theme_classic()+
+  theme(legend.position = c(0.2, 0.8))
+SpxHerbxTPxDrt
+#Saved#
+
+Drttrans<-lmerTest::lmer(data=HerbDamYear,
+                          trans~year*Species*drought*N*P*K+ (1|block)+ (1|Plot:year))
+Drttrans
+Anova(Drttrans, type=3)
+
+#### Herbivory and Species by Year Graphs ####
 SpecHerbbyYear<-ggplot(data=HerbDamSpec, aes(x=Species, y=totaldam, fill=Treatment)) +
   geom_boxplot() + geom_signif(comparisons = list(c("C","NP")), map_signif_level = TRUE, annotations = c("***")) + labs(title="Herbivore Damage by Species")
 SpecHerbbyYear
@@ -682,8 +804,42 @@ YearAnalysis2.1+stat_compare_means(aes(group=Treatment),label = "p.format")
 
 
 ggplot(HerbSpecNut22, aes(x=Treatment, y=totaldam, fill=Treatment) +geom_bar())
+
+#### Seasonal Arthropod Data by Treatment####
 p <- ggplot(HerbSpecNut22, aes(Treatment,totaldam, fill=Treatment)) + geom_col()
 p + facet_grid(Species~Time.Point) +labs(y = "Arthropod Herbivore Damage by Timepoint")
+#Saved#
+
+TPXSp<-HerbDamYear%>%
+  filter(drought=="C")%>%
+  select(-drought)%>%
+  filter(year=="2022")%>%
+  group_by(Time.Point, Species) %>%
+  summarise(AverageHerbivory=mean(trans), se=stderror(trans))
+
+cols <- c("#EEA236", "#5CB85C", "#46B8DA", "#9632B8")
+
+TPGXSp<-ggplot(TPXSp, aes(x = as.numeric(Time.Point), y = AverageHerbivory, color = Species)) +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
+  scale_color_manual(values = cols)+
+  theme_classic()+
+  theme(legend.position = c(0.2, 0.8))
+TPGXSp
+#Saved#
+
+HerbDamYear22<-HerbDamYear%>%
+  filter(drought=="C")%>%
+  select(-drought)%>%
+  filter(year=="2022")
+
+
+Timetrans<-lmerTest::lmer(data=HerbDamYear22,
+                          trans~Time.Point*Species*N*P*K+ (1|block)+ (1|Plot:Time.Point))
+#check this with and with out the plot factor being in there
+Timetrans
+Anova(Timetrans, type=3)
 
 
 
@@ -875,6 +1031,245 @@ summary(income.happiness.lm)
 
 Exampleregressiongraph<-ggplot(income.data, aes(x=income, y=happiness))+ geom_point()
 Exampleregressiongraph
+
+####PeakHerbYears Regressions ####
+PeakHerbYears<-HerbDamYear%>%
+  filter(Time.Point=="2") %>%
+  filter(Treatment!="CTRL+Shelter")%>%
+  filter(Treatment!="NPK+, Shelter")
+
+PeakReg22<-PeakHerbYears%>%
+  filter(year=="2022")
+PeakReg22<-left_join(PeakReg22, PlantNutTP2)%>%
+  filter(Treatment!="CTRL+Shelter")%>%
+  filter(Treatment!="NPK+, Shelter")
+
+
+NYear <- lm(trans ~ Nperc, data = PeakReg22)
+summary(NYear)
+
+NYearGraph<-ggplot(NYear, aes(x=Nperc, y=trans))+geom_point()
+NYearGraph<-NYearGraph+geom_smooth(method = "lm", col="black")
+NYearGraph
+#saved#
+
+
+#Significant#
+PYear <- lm(trans ~ Pperc, data = PeakReg22)
+summary(PYear)
+
+PYearGraph<-ggplot(PYear, aes(x=Pperc, y=trans))+geom_point()
+PYearGraph<-PYearGraph+geom_smooth(method = "lm", col="black")
+PYearGraph
+#Saved#
+
+KYear <- lm(trans ~ Kperc, data = PeakReg22)
+summary(KYear)
+
+KYearGraph<-ggplot(KYear, aes(x=Kperc, y=trans))+geom_point()
+KYearGraph<-KYearGraph+geom_smooth(method = "lm", col="black")
+KYearGraph
+
+#Richness; Significant in both#
+RichYear <- lm(trans ~ MaxRichness, data = PeakHerbYears)
+summary(RichYear)
+
+RichYearGraph<-ggplot(RichYear, aes(x=MaxRichness, y=trans))+geom_point()
+RichYearGraph<-RichYearGraph+geom_smooth(method = "lm", col="black")
+RichYearGraph
+
+RichYear <- lm(totaldam ~ MaxRichness, data = PeakHerbYears)
+summary(RichYear)
+
+RichYearGraph<-ggplot(RichYear, aes(x=MaxRichness, y=totaldam))+geom_point()
+RichYearGraph<-RichYearGraph+geom_smooth(method = "lm", col="black")
+RichYearGraph
+
+#Shannon diversity; sig with totaldam#
+ShannYear <- lm(trans ~ MaxShannon, data = PeakHerbYears)
+summary(ShannYear)
+
+ShannYearGraph<-ggplot(ShannYear, aes(x=MaxShannon, y=trans))+geom_point()
+ShannYearGraph<-ShannYearGraph+geom_smooth(method = "lm", col="black")
+ShannYearGraph
+
+ShannYear <- lm(totaldam ~ MaxShannon, data = PeakHerbYears)
+summary(ShannYear)
+
+ShannYearGraph<-ggplot(ShannYear, aes(x=MaxShannon, y=totaldam))+geom_point()
+ShannYearGraph<-ShannYearGraph+geom_smooth(method = "lm", col="black")
+ShannYearGraph
+
+#significant w/totaldam, not trans data (Ask Sally)#
+BPYear <- lm(trans ~ MaxBPdom, data = PeakHerbYears)
+summary(BPYear)
+
+BPYearGraph<-ggplot(BPYear, aes(x=MaxBPdom, y=trans))+geom_point()
+BPYearGraph<-BPYearGraph+geom_smooth(method = "lm", col="black")
+BPYearGraph
+
+BPYear <- lm(totaldam ~ MaxBPdom, data = PeakHerbYears)
+summary(BPYear)
+
+BPYearGraph<-ggplot(BPYear, aes(x=MaxBPdom, y=totaldam))+geom_point()
+BPYearGraph<-BPYearGraph+geom_smooth(method = "lm", col="black")
+BPYearGraph
+#Saved#
+
+#Forb cover#
+ForbYear <- lm(trans ~ Maxforbcov, data = PeakHerbYears)
+summary(ForbYear)
+
+ForbYearGraph<-ggplot(ForbYear, aes(x=Maxforbcov, y=trans))+geom_point()
+ForbYearGraph<-ForbYearGraph+geom_smooth(method = "lm", col="black")
+ForbYearGraph
+
+ForbYear <- lm(totaldam ~ Maxforbcov, data = PeakHerbYears)
+summary(ForbYear)
+
+ForbYearGraph<-ggplot(ForbYear, aes(x=Maxforbcov, y=totaldam))+geom_point()
+ForbYearGraph<-ForbYearGraph+geom_smooth(method = "lm", col="black")
+ForbYearGraph
+#saved#
+
+#Gram cover#
+GramYear <- lm(trans ~ Maxgraminoidcov, data = PeakHerbYears)
+summary(GramYear)
+
+GramYearGraph<-ggplot(GramYear, aes(x=Maxgraminoidcov, y=trans))+geom_point()
+GramYearGraph<-GramYearGraph+geom_smooth(method = "lm", col="black")
+GramYearGraph
+
+GramYear <- lm(totaldam ~ Maxgraminoidcov, data = PeakHerbYears)
+summary(GramYear)
+
+GramYearGraph<-ggplot(GramYear, aes(x=Maxgraminoidcov, y=totaldam))+geom_point()
+GramYearGraph<-GramYearGraph+geom_smooth(method = "lm", col="black")
+GramYearGraph
+
+#Wire cover; sig with trans, not totaldam#
+WireYear <- lm(trans ~ Maxwirecov, data = PeakHerbYears)
+summary(WireYear)
+
+WireYearGraph<-ggplot(WireYear, aes(x=Maxwirecov, y=trans))+geom_point()
+WireYearGraph<-WireYearGraph+geom_smooth(method = "lm", col="black")
+WireYearGraph
+
+WireYear <- lm(totaldam ~ Maxwirecov, data = PeakHerbYears)
+summary(WireYear)
+
+WireYearGraph<-ggplot(WireYear, aes(x=Maxwirecov, y=totaldam))+geom_point()
+WireYearGraph<-WireYearGraph+geom_smooth(method = "lm", col="black")
+WireYearGraph
+
+
+#Dom species; some sig w/trans#
+MaxspYear <- lm(trans ~ Maxdomspp1, data = PeakHerbYears)
+summary(MaxspYear)
+
+MaxspYearGraph<-ggplot(MaxspYear, aes(x=Maxdomspp1, y=trans))+geom_point()
+MaxspYearGraph<-MaxspYearGraph+geom_smooth(method = "lm", col="black")
+MaxspYearGraph
+
+MaxspYear <- lm(totaldam ~ Maxdomspp1, data = PeakHerbYears)
+summary(MaxspYear)
+
+MaxspYearGraph<-ggplot(MaxspYear, aes(x=Maxdomspp1, y=totaldam))+geom_point()
+MaxspYearGraph<-MaxspYearGraph+geom_smooth(method = "lm", col="black")
+MaxspYearGraph
+
+
+#Forb biomass#
+ForbbioYear <- lm(trans ~ forbbiomass, data = PeakHerbYears)
+summary(ForbbioYear)
+
+ForbbioYearGraph<-ggplot(ForbbioYear, aes(x=forbbiomass, y=trans))+geom_point()
+ForbbioYearGraph<-ForbbioYearGraph+geom_smooth(method = "lm", col="black")
+ForbbioYearGraph
+
+ForbbioYear <- lm(totaldam ~ forbbiomass, data = PeakHerbYears)
+summary(ForbbioYear)
+
+ForbbioYearGraph<-ggplot(ForbbioYear, aes(x=forbbiomass, y=totaldam))+geom_point()
+ForbbioYearGraph<-ForbbioYearGraph+geom_smooth(method = "lm", col="black")
+ForbbioYearGraph
+
+#Gram biomass#
+GrambioYear <- lm(trans ~ graminoidbiomass, data = PeakHerbYears)
+summary(GrambioYear)
+
+GrambioYearGraph<-ggplot(GrambioYear, aes(x=graminoidbiomass, y=trans))+geom_point()
+GrambioYearGraph<-GrambioYearGraph+geom_smooth(method = "lm", col="black")
+GrambioYearGraph
+
+GrambioYear <- lm(totaldam ~ graminoidbiomass, data = PeakHerbYears)
+summary(GrambioYear)
+
+GrambioYearGraph<-ggplot(GrambioYear, aes(x=graminoidbiomass, y=totaldam))+geom_point()
+GrambioYearGraph<-GrambioYearGraph+geom_smooth(method = "lm", col="black")
+GrambioYearGraph
+
+#Legume biomass; some significance w/both#
+LegbioYear <- lm(trans ~ legumebiomass, data = PeakHerbYears)
+summary(LegbioYear)
+
+LegbioYearGraph<-ggplot(LegbioYear, aes(x=legumebiomass, y=trans))+geom_point()
+LegbioYearGraph<-LegbioYearGraph+geom_smooth(method = "lm", col="black")
+LegbioYearGraph
+
+LegbioYear <- lm(totaldam ~ legumebiomass, data = PeakHerbYears)
+summary(LegbioYear)
+
+LegbioYearGraph<-ggplot(LegbioYear, aes(x=legumebiomass, y=totaldam))+geom_point()
+LegbioYearGraph<-LegbioYearGraph+geom_smooth(method = "lm", col="black")
+LegbioYearGraph
+
+#Litter biomass; extremely significant in both#
+LitbioYear <- lm(trans ~ litterbiomass, data = PeakHerbYears)
+summary(LitbioYear)
+
+LitbioYearGraph<-ggplot(LitbioYear, aes(x=litterbiomass, y=trans))+geom_point()
+LitbioYearGraph<-LitbioYearGraph+geom_smooth(method = "lm", col="black")
+LitbioYearGraph
+
+LitbioYear <- lm(totaldam ~ litterbiomass, data = PeakHerbYears)
+summary(LitbioYear)
+
+LitbioYearGraph<-ggplot(LitbioYear, aes(x=litterbiomass, y=totaldam))+geom_point()
+LitbioYearGraph<-LitbioYearGraph+geom_smooth(method = "lm", col="black")
+LitbioYearGraph
+
+#Pine needle biomass; extremely significant in both#
+PinebioYear <- lm(trans ~ pineneedlebiomass, data = PeakHerbYears)
+summary(PinebioYear)
+
+PinebioYearGraph<-ggplot(PinebioYear, aes(x=pineneedlebiomass, y=trans))+geom_point()
+PinebioYearGraph<-PinebioYearGraph+geom_smooth(method = "lm", col="black")
+PinebioYearGraph
+
+PinebioYear <- lm(totaldam ~ pineneedlebiomass, data = PeakHerbYears)
+summary(PinebioYear)
+
+PinebioYearGraph<-ggplot(PinebioYear, aes(x=pineneedlebiomass, y=totaldam))+geom_point()
+PinebioYearGraph<-PinebioYearGraph+geom_smooth(method = "lm", col="black")
+PinebioYearGraph
+
+#Woody biomass; sig with trans, not totaldam#
+WoodbioYear <- lm(trans ~ woodybiomass, data = PeakHerbYears)
+summary(WoodbioYear)
+
+WoodbioYearGraph<-ggplot(WoodbioYear, aes(x=woodybiomass, y=trans))+geom_point()
+WoodbioYearGraph<-WoodbioYearGraph+geom_smooth(method = "lm", col="black")
+WoodbioYearGraph
+
+WoodbioYear <- lm(totaldam ~ woodybiomass, data = PeakHerbYears)
+summary(WoodbioYear)
+
+WoodbioYearGraph<-ggplot(WoodbioYear, aes(x=woodybiomass, y=totaldam))+geom_point()
+WoodbioYearGraph<-WoodbioYearGraph+geom_smooth(method = "lm", col="black")
+WoodbioYearGraph
+
+
 
 
 #####Nitrogen Regression#####
