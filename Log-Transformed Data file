@@ -38,23 +38,15 @@ Herb21<-read.csv("Entered Sandhills Leaf Damage Data_2021.csv") %>%
   mutate(Timepoint=2)
 unique(Herb21$Species)
 
-Herb22<-read.csv("Mann_Damage2022_v3.csv") %>%
-  mutate(Year="22") %>%
-  filter(Notes!="None found") %>%
-  filter(Notes!="no plants") %>%
-  filter(Notes!="No Plant") %>%
-  filter(Notes!="No Plants") %>%
-  filter(Notes!="No plants") %>%
-  filter(Notes!="No plamts") %>%
-  filter(Notes!=" No plants") %>%
-  filter(Notes!="no mature plants") %>%
-  filter(Notes!="no plant") %>% #remove 59 rows- not true 0s must be removed - WILL check to see if I interpreted the notes correctly here ALSO what does the "_" mean in notes? Should these be removed too?
+Herb22<-read.csv("Mann_Damage2022_v3.csv", na.strings = "")%>%
+  mutate(Year=paste("22"))%>%
+ #lter(Notes!="no plant") %>% #remove 59 rows- not true 0s must be removed - WILL check to see if I interpreted the notes correctly here ALSO what does the "_" mean in notes? Should these be removed too?
   filter(Other.Fungi!="_") %>%
-  filter(Species!="Liatris_cokeri") %>%
+  filter(Species!="Liatris_cokeri")%>%
   #select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
-  group_by(Year, Timepoint, Block, Plot, Treatment, Replicate, Species) %>%
+  group_by(Year,Timepoint, Block, Plot, Treatment, Replicate, Species) %>%
   pivot_longer(cols= Chew:Other.Fungi, names_to = "HerbType", values_to="HerbPercent") %>%
-  ungroup() %>%
+  ungroup()%>%
   mutate(HerbPercent=as.numeric(HerbPercent)) %>%
   filter(HerbType==c("Chew", "Mine.Suck")) %>%
   group_by(Year, Timepoint, Block, Plot, Treatment, Replicate, Species) %>%
@@ -128,7 +120,7 @@ Nuttrans2<-lmerTest::lmer(data=DamAll_Nuttrans,
 #check this with and with out the plot factor being in there
 Nuttrans2
 anova(Nuttrans2, type=3)
-Anova(Nuttrans2, type = 3)
+Anova(Nuttrans, type = 3)
 ###With Plot- Marginal Year*all significance,Significant Year*Species and Nitrogen, Very signif. Species and Year
 ###Without Plot- Same
 
@@ -197,7 +189,7 @@ N
 ###For just looking at drought effects
 DamAll_Drought<- DamAll %>%
   filter(Treatment %in% c("C", "NPK", "CTRL+Shelter", "NPK+, Shelter")) %>%
-  filter(Year==22) %>% # because this is the only year that drought shelters were sampled right?
+  filter(Year%in% c("22")) %>% # because this is the only year that drought shelters were sampled right?
   mutate(Timepoint=as.factor(Timepoint))
 Droughttrans<-lmerTest::lmer(data=DamAll_Drought,
                              trans~Timepoint*Species*Drought*Nitrogen+ (1|Block))
