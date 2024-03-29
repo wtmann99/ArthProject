@@ -670,6 +670,16 @@ HYearsNoDrought
 z <- ggplot(DamAll_Nuttrans, aes(Treatment,totaldam, fill=Treatment)) + geom_col()
 z + facet_grid(Species~Year) +labs(y = "Arthropod Herbivore Damage by Year")
 
+
+SpxHerb<-DamAll_Nuttrans %>%
+  group_by(Species) %>%
+  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
+spherb <- ggplot(SpxHerb, aes(Species,AverageHerbivory)) + geom_col() + geom_errorbar(aes(x=Species, ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)
+spherb +labs(y = "Arthropod Herbivore Damage")
+
+y <- ggplot(DamAll_Nuttrans, aes(Species,totaldam)) + geom_col()
+y
+
 YrXSp<-DamAll_Nuttrans %>%
   group_by(Year, Species) %>%
   summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
@@ -698,7 +708,7 @@ NsXSp<-ggplot(NXSp, aes(x = Nitrogen, y = AverageHerbivory, color = Species)) +
   geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
   scale_color_manual(values = cols)+
   theme_classic()+
-  theme(legend.position = c(0.2, 0.8))
+  theme(legend.position = "none")
 NsXSp
 #Saved#
 
@@ -714,7 +724,7 @@ PsXSp<-ggplot(PXSp, aes(x = Phosphorous, y = AverageHerbivory, color = Species))
   geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
   scale_color_manual(values = cols)+
   theme_classic()+
-  theme(legend.position = c(0.2, 0.8))
+  theme(legend.position = "none")
 PsXSp
 #Saved#
 
@@ -729,11 +739,68 @@ KsXSp<-ggplot(KXSp, aes(x = Potassium, y = AverageHerbivory, color = Species)) +
   geom_line() +
   geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
   scale_color_manual(values = cols)+
-  theme_classic()+
-  theme(legend.position = c(0.2, 0.8))
+  theme_classic()
 KsXSp
 #Saved#
 
+
+NsXSp+PsXSp+KsXSp+ theme_classic()
+#saved#
+
+
+NPK<-DamAll_Nuttrans %>%
+  group_by(Treatment, Species) %>%
+  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
+cols <- c("#EEA236", "#5CB85C", "#46B8DA", "#9632B8")
+Aris<-NPK%>%
+  filter(Species=="Aristida_stricta")
+Ar <- ggplot(Aris, aes(Treatment,AverageHerbivory)) + 
+  geom_point()+
+  geom_line()+
+  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
+  scale_color_manual(values = cols)+
+  theme_classic() +
+  theme(legend.position = "none")+
+  labs(y = "Arthropod Herbivore Damage on Aristida_stricta")
+Ar
+
+Pter<-NPK%>%
+  filter(Species=="Pteridium_aquilinum")
+Pt <- ggplot(Pter, aes(Treatment,AverageHerbivory)) + 
+  geom_point()+
+  geom_line()+
+  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
+  scale_color_manual(values = cols)+
+  theme_classic()+
+  theme(legend.position = "none")+
+  labs(y = "Arthropod Herbivore Damage on Pteridium_aquilinum")
+Pt
+
+Pity<-NPK%>%
+  filter(Species=="Pityopsis_aspera")
+Pi <- ggplot(Pity, aes(Treatment,AverageHerbivory)) + 
+  geom_point()+
+  geom_line()+
+  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
+  scale_color_manual(values = cols)+
+  theme_classic()+
+  theme(legend.position = "none")+
+  labs(y = "Arthropod Herbivore Damage on Pityopsis_aspera")
+Pi
+
+Vacc<-NPK%>%
+  filter(Species=="Vaccinium_tenellum")
+Va <- ggplot(Vacc, aes(Treatment,AverageHerbivory)) + 
+  geom_point()+
+  geom_line()+
+  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
+  scale_color_manual(values = cols)+
+  theme_classic()+
+  theme(legend.position = "none")+
+  labs(y = "Arthropod Herbivore Damage on Vaccinium_tenellum")
+Va
+
+Ar+Pt+Pi+Va
 
 Yeartrans<-lmerTest::lmer(data=DamAll_Nuttrans,
                           trans~Year*Species*Nitrogen*Phosphorous*Potassium+ (1|Block)+ (1|Plot:Year))
@@ -747,9 +814,31 @@ emmeans(Yeartrans, pairwise ~ Species|Year)
 ####Herbivory by Drought and Year####
 HerbDamYear
 
-q <- ggplot(DamAll_Drought, aes(Treatment,totaldam, fill=Treatment)) + geom_col()
+Drought<-DamAll_Drought %>%
+  group_by(Treatment, Species,Timepoint, Year) %>%
+  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
+NoSpDrought<-DamAll_Drought %>%
+  group_by(Treatment,Year) %>%
+  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
+PureDrought<-DamAll_Drought %>%
+  group_by(Drought, Species,Timepoint, Year) %>%
+  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
+
+q <- ggplot(Drought, aes(Treatment,AverageHerbivory)) + geom_col()
 q + facet_grid(Species~Year) +labs(y = "Arthropod Herbivore Damage by Year")
 #Saved#
+q
+
+nsd <- ggplot(NoSpDrought, aes(Treatment,AverageHerbivory)) + geom_col() + geom_errorbar(aes(x=Treatment, ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)
+nsd +labs(y = "Arthropod Herbivore Damage by Year")
+
+
+d <- ggplot(Drought, aes(Treatment,AverageHerbivory)) + geom_col() + geom_errorbar(aes(x=Treatment, ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)
+d + facet_grid(Species~Timepoint) +labs(y = "Arthropod Herbivore Damage by Year")
+#Saved#
+
+pd <- ggplot(PureDrought, aes(Drought,AverageHerbivory)) + geom_col() + geom_errorbar(aes(x=Drought, ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)
+pd + facet_grid(Species~Timepoint) +labs(y = "Arthropod Herbivore Damage by Year")
 
 
 HerbSpecNut22
@@ -815,9 +904,76 @@ YearAnalysis2.1+stat_compare_means(aes(group=Treatment),label = "p.format")
 ggplot(HerbSpecNut22, aes(x=Treatment, y=totaldam, fill=Treatment) +geom_bar())
 
 #### Seasonal Arthropod Data by Treatment####
-p <- ggplot(HerbSpecNut22, aes(Treatment,totaldam, fill=Treatment)) + geom_col()
-p + facet_grid(Species~Time.Point) +labs(y = "Arthropod Herbivore Damage by Timepoint")
+
+SpxHerbxTPxTrt<-DamAll_Seasonal %>%
+  group_by(Treatment, Species,Timepoint, Year) %>%
+  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
+
+p <- ggplot(SpxHerbxTPxTrt, aes(Treatment,AverageHerbivory)) + geom_col()+ geom_errorbar(aes(x=Treatment, ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)
+p + facet_grid(Species~Timepoint) +labs(y = "Arthropod Herbivore Damage by Timepoint")
 #Saved#
+
+
+NPK_Season<-DamAll_Seasonal %>%
+  group_by(Treatment, Species) %>%
+  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
+PK_Season<-NPK_Season%>%
+  filter(Treatment!="K")%>%
+  filter(Treatment!="NK")%>%
+  filter(Treatment!="PK")%>%
+  filter(Treatment!="NPK")
+Vacc_S<-PK_Season%>%
+  filter(Species=="Vaccinium_tenellum")
+Aris_S<-PK_Season%>%
+  filter(Species=="Aristida_stricta")
+Pter_S<-PK_Season%>%
+  filter(Species=="Pteridium_aquilinum")
+Pity_S<-PK_Season%>%
+  filter(Species=="Pityopsis_aspera")
+
+
+Va_S <- ggplot(Vacc_S, aes(Treatment,AverageHerbivory)) + 
+  geom_point()+
+  geom_line()+
+  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
+  scale_color_manual(values = cols)+
+  theme_classic()+
+  theme(legend.position = "none")+
+  labs(y = "Arthropod Herbivore Damage on Vaccinium_tenellum")
+Va_S
+
+Ar_S <- ggplot(Aris_S, aes(Treatment,AverageHerbivory)) + 
+  geom_point()+
+  geom_line()+
+  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
+  scale_color_manual(values = cols)+
+  theme_classic()+
+  theme(legend.position = "none")+
+  labs(y = "Arthropod Herbivore Damage on Aristida_stricta")
+Ar_S
+
+Pt_S <- ggplot(Pter_S, aes(Treatment,AverageHerbivory)) + 
+  geom_point()+
+  geom_line()+
+  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
+  scale_color_manual(values = cols)+
+  theme_classic()+
+  theme(legend.position = "none")+
+  labs(y = "Arthropod Herbivore Damage on Vaccinium_tenellum")
+Pt_S
+
+Pi_S <- ggplot(Pity_S, aes(Treatment,AverageHerbivory)) + 
+  geom_point()+
+  geom_line()+
+  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
+  scale_color_manual(values = cols)+
+  theme_classic()+
+  theme(legend.position = "none")+
+  labs(y = "Arthropod Herbivore Damage on Vaccinium_tenellum")
+Pi_S
+
+Ar_S+Pt_S+Va_S+Pi_S
+
 
 TPXSp<-HerbDamYear%>%
   filter(drought=="C")%>%
@@ -849,6 +1005,66 @@ Timetrans<-lmerTest::lmer(data=HerbDamYear22,
 #check this with and with out the plot factor being in there
 Timetrans
 Anova(Timetrans, type=3)
+
+
+
+
+#### Dr. K regressions from March 29th, 2024 ####
+
+library(multcomp)
+library(lme4)
+library(lmerTest)
+library(tidyverse)
+
+DamJuly2022<-read.csv("AllDamRegs_29March2024.csv") %>%
+  filter(Year==22) %>% 
+  filter(Timepoint==2)
+
+#### Leaf Nutrient Figure and statistics
+LeafNuts <- DamJuly2022 %>% 
+  select(Block, Plot, Species, totaldam, trans, Nperc, Kperc, Pperc)
+
+
+modelNperc <- lm(trans ~ Nperc, data = LeafNuts)
+summary(modelNperc)
+NpercGraph<-ggplot(data = LeafNuts, aes(x = Nperc, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Leaf Tissue % N",
+       y = "Herbivore Damage (log(%))")+
+  theme_classic()
+NpercGraph
+
+modelPperc <- lm(trans ~ Pperc, data = LeafNuts)
+summary(modelPperc)
+PpercGraph<-ggplot(data = LeafNuts, aes(x = Pperc, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Leaf Tissue % P",
+       y = "Herbivore Damage (log(%))")+
+  theme_classic()
+PpercGraph
+
+modelKperc <- lm(trans ~ Kperc, data = LeafNuts)
+summary(modelKperc)
+KpercGraph<-ggplot(data = LeafNuts, aes(x = Kperc, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Leaf Tissue % K",
+       y = "Herbivore Damage (log(%))")+
+  theme_classic()
+KpercGraph
+
+NpercGraph+PpercGraph+KpercGraph
+
+
+#### Plant Community Figure and statistics
+
+
+#### Insect Community Figure and statistics
+
+
+
 
 
 
@@ -1058,6 +1274,8 @@ PlantNutTP2<-PlantNutTP2%>%
   mutate(Year=paste("22"))%>%
   mutate(Timepoint=as.numeric(Timepoint))
 
+
+####DamAll_Regs####
 Metrics[c('2', 'Year')] <- str_split_fixed(Metrics$year, '0', 2)
 Matrics<-Metrics%>%
   select(-year, -"2")
@@ -1067,7 +1285,22 @@ DamAll_Reg<-left_join(DamAll_Reg, Metrics)
 write.csv(DamAll_Reg, "AllDamRegs.csv")
 DamAll_Reg<-read.csv("AllDamRegs.csv")
 DamAll_Reg22<-DamAll_Reg%>%
-  filter(Year=="22")
+  filter(Year=="22")%>%
+  filter(Timepoint=="2")
+####Use DamAll_Reg for all regressions. Use only 2022 for regression lines. Record Chi-sq, Df, and Pr(>Chisq) ####
+
+Regtrans<-lmerTest::lmer(data=DamAll_Reg,
+                          trans~Year*Species*Nitrogen*Phosphorous*Potassium+ (1|Block)+ (1|Plot:Year))
+Regtrans
+Anova(Regtrans, type=3)
+
+
+Regtrans22<-lmerTest::lmer(data=DamAll_Reg22,
+                           trans~Species*Nitrogen*Phosphorous*Potassium*MaxShannon*MaxRichness*MaxEvar*MaxBPdom*Maxwirecov*Maxgraminoidcov*Maxforbcov*Maxdomspp1*forbbiomass*graminoidbiomass*legumebiomass*litterbiomass*pineneedlebiomass*woodybiomass+ (1|Block)+ (1|Plot:Year))
+Regtrans22
+Anova(Regtrans22, type=3)
+
+
 
 NYear <- lm(trans ~ Nperc, data = DamAll_Reg22)
 summary(NYear)
