@@ -40,7 +40,7 @@ unique(Herb21$Species)
 
 Herb22<-read.csv("Mann_Damage2022_v3.csv", na.strings = "")%>%
   mutate(Year=paste("22"))%>%
- #lter(Notes!="no plant") %>% #remove 59 rows- not true 0s must be removed - WILL check to see if I interpreted the notes correctly here ALSO what does the "_" mean in notes? Should these be removed too?
+  #lter(Notes!="no plant") %>% #remove 59 rows- not true 0s must be removed - WILL check to see if I interpreted the notes correctly here ALSO what does the "_" mean in notes? Should these be removed too?
   filter(Other.Fungi!="_") %>%
   filter(Species!="Liatris_cokeri")%>%
   #select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
