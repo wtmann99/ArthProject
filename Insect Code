@@ -1057,6 +1057,83 @@ KpercGraph
 
 NpercGraph+PpercGraph+KpercGraph
 
+modelgramcov <- lm(trans ~ Maxgraminoidcov, data = DamAll_Reg22)
+summary(modelgramcov)
+gramcovGraph<-ggplot(data = DamAll_Reg22, aes(x = Maxgraminoidcov, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Graminoid Cover",
+       y = "Herbivore Damage (log(%))")+
+  theme_classic()
+gramcovGraph
+
+modelforbcov <- lm(trans ~ Maxforbcov, data = DamAll_Reg22)
+summary(modelforbcov)
+forbcovGraph<-ggplot(data = DamAll_Reg22, aes(x = Maxforbcov, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Forb Cover",
+       y = "Herbivore Damage (log(%))")+
+  theme_classic()
+forbcovGraph
+
+
+modelgrambio <- lm(trans ~ graminoidbiomass, data = DamAll_Reg22)
+summary(modelgrambio)
+grambioGraph<-ggplot(data = DamAll_Reg22, aes(x = graminoidbiomass, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Graminoid Biomass",
+       y = "Herbivore Damage (log(%))")+
+  theme_classic()
+grambioGraph
+
+
+modellegbio <- lm(trans ~ legumebiomass, data = DamAll_Reg22)
+summary(modellegbio)
+legbioGraph<-ggplot(data = DamAll_Reg22, aes(x = legumebiomass, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Legume Biomass",
+       y = "Herbivore Damage (log(%))")+
+  theme_classic()
+legbioGraph
+
+
+modellitbio <- lm(trans ~ litterbiomass, data = DamAll_Reg22)
+summary(modellitbio)
+litbioGraph<-ggplot(data = DamAll_Reg22, aes(x = litterbiomass, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Litter Biomass",
+       y = "Herbivore Damage (log(%))")+
+  theme_classic()
+litbioGraph
+
+
+modelshann <- lm(trans ~ MaxShannon, data = DamAll_Reg22)
+summary(modelshann)
+shannGraph<-ggplot(data = DamAll_Reg22, aes(x = MaxShannon, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Shannon Diversity",
+       y = "Herbivore Damage (log(%))")+
+  theme_classic()
+shannGraph
+
+
+
+modelrich <- lm(trans ~ MaxRichness, data = DamAll_Reg22)
+summary(modelrich)
+richGraph<-ggplot(data = DamAll_Reg22, aes(x = MaxRichness, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Species Richness",
+       y = "Herbivore Damage (log(%))")+
+  theme_classic()
+richGraph
+
+
 
 #### Plant Community Figure and statistics
 
@@ -1296,7 +1373,7 @@ Anova(Regtrans, type=3)
 
 
 Regtrans22<-lmerTest::lmer(data=DamAll_Reg22,
-                           trans~Species*Nitrogen*Phosphorous*Potassium*MaxShannon*MaxRichness*MaxEvar*MaxBPdom*Maxwirecov*Maxgraminoidcov*Maxforbcov*Maxdomspp1*forbbiomass*graminoidbiomass*legumebiomass*litterbiomass*pineneedlebiomass*woodybiomass+ (1|Block)+ (1|Plot:Year))
+                           trans~Species+MaxShannon+MaxRichness+MaxEvar+MaxBPdom+Maxwirecov+Maxgraminoidcov+Maxforbcov+Maxdomspp1+forbbiomass+graminoidbiomass+legumebiomass+litterbiomass+pineneedlebiomass+woodybiomass+ (1|Block)+ (1|Plot:Year))
 Regtrans22
 Anova(Regtrans22, type=3)
 
