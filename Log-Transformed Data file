@@ -115,8 +115,8 @@ Nuttrans<-lmerTest::lmer(data=DamAll_Nuttrans,
 Nuttrans
 Anova(Nuttrans, type=3)
 
-Nuttrans2<-lmerTest::lmer(data=DamAll_Nuttrans,
-                          trans~Year*Species*Nitrogen+ (1|Block)+ (1|Plot:Year))
+Nuttrans2<-lmerTest::lmer(data=DamAll_Reg22,
+                          trans~Year*Species*Nitrogen*Phosphorous*Potassium+ (1|Block)+ (1|Plot:Year))
 #check this with and with out the plot factor being in there
 Nuttrans2
 anova(Nuttrans2, type=3)
@@ -134,7 +134,7 @@ emmeans(Nuttrans, pairwise ~ Species, adjust="holm")
 ### Across all years, Aristida and Pteridium are different from all other species
 ### Pityopsis and Vaccinium are different from both Aristida and Pteridium, but not from each other
 
-emmeans(Nuttrans, pairwise ~ Species|Year)
+emmeans(Nuttrans, pairwise ~ Nitrogen*Phosphorous*Potassium|Species)
 ### 2020-Aristida different from all, but other species the same
 ### 2021-Aristida different from Pityopsis and Pteridium, not Vaccinium. Pteridium different than Vaccinium and Aristida
 ### 2022-Aristida is different than Pteridium
@@ -144,10 +144,13 @@ emmeans(Nuttrans, pairwise ~ Nitrogen|Year)
 ### 2020 is different in Control vs Nitrogen. Nitrogen herbivorized less
 ### Other years are the same in Control vs Nitrogen. In 2023, they may have started to diverge again
 
-emmeans(Nuttrans, pairwise ~ Species|Phosphorous)
+emmeans(Nuttrans2, pairwise ~ Species|Phosphorous)
 
+emmeans(Nuttrans2, pairwise ~ Species|Nitrogen)
 
-emmeans(Nuttrans, pairwise ~ Nitrogen|Year)
+emmeans(Nuttrans2, pairwise ~ Species|Potassium)
+
+emmeans(Nuttrans, pairwise ~ Treatment|Year)
 
 
 emmeans(Nuttrans, pairwise ~ Nitrogen|Year)
@@ -197,8 +200,9 @@ Droughttrans
 anova(Droughttrans, type=3)
 Anova(Droughttrans, type = 3)
 ### Marginal Timepoint*All and Species, Significant Species*D*N, Very Significant Timepoint and Timepoint*Species
+emmeans(Droughttrans, pairwise ~ Timepoint*Drought*Nitrogen|Species, adjust="holm")
 
-emmeans(Droughttrans, pairwise ~ Drought*Nitrogen|Species, adjust="holm")
+emmeans(Droughttrans, pairwise ~ Drought*Nitrogen, adjust="holm")
 ### Aristida- No difference
 ### Pityopsis- Marginal Pure Control vs D*N, Significant Pure Drought vs Drought*N; D*N low Herbivory vs Pure Control and Drought Control
 ### Pteridium- No difference
@@ -228,7 +232,7 @@ emmeans(Season, pairwise ~ Species|Timepoint, adjust="holm")
 ### Aristida-Pteridium, Pityopsis-Pteridium, and Pteridium-Vaccinium are different in TP2; Pteridium herbivorized more
 ### Aristida is different from everything and Pityopsis is different from Pteridium in TP3; Aristida herbivorized less, Pityopsis herbivorized less than Pteridium
 
-emmeans(Season, pairwise ~ Nitrogen*Phosphorous, adjust="holm")
+emmeans(Season, pairwise ~ Nitrogen*Phosphorous|Species, adjust="holm")
 ### Only NC-NP are marginally different. NP is herbivorized the most, NC is herbivorized the least
 
 emmeans(Season, pairwise ~ Nitrogen*Phosphorous*Potassium|Species, adjust="holm")
