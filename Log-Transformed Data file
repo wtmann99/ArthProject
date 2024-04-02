@@ -360,3 +360,26 @@ anova(Season, type=3)
 emmeans(Season, pairwise ~ Potassium, adjust="holm")
 emmeans(Season, pairwise ~ Timepoint, adjust="holm")
 emmeans(Season, pairwise ~ Phosphorous, adjust="holm")
+
+#### Bugtrans ####
+
+Bugtrans<-lmerTest::lmer(data=DamAll_ArthHerb,
+                         trans~Year*Order_Family*FamCount*Species*Treatment+ (1|Block)+ (1|Plot:Year))
+#check this with and with out the plot factor being in there
+Bugtrans
+Anova(Bugtrans, type=3)
+
+
+
+
+emmeans(Season, pairwise ~ Potassium, adjust="holm")
+emmeans(Season, pairwise ~ Timepoint, adjust="holm")
+emmeans(Season, pairwise ~ Phosphorous, adjust="holm")
+
+
+
+
+
+
+
+
