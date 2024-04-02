@@ -124,6 +124,13 @@ Anova(Nuttrans, type = 3)
 ###With Plot- Marginal Year*all significance,Significant Year*Species and Nitrogen, Very signif. Species and Year
 ###Without Plot- Same
 
+model <- lm(trans ~ Species*Nitrogen*Phosphorous*Potassium, data = DamAll_Nuttrans)
+summary(model)
+
+
+
+
+
 library(performance)
 library(emmeans)
 ##Nuttrans##
@@ -199,10 +206,17 @@ Droughttrans<-lmerTest::lmer(data=DamAll_Drought,
 Droughttrans
 anova(Droughttrans, type=3)
 Anova(Droughttrans, type = 3)
-### Marginal Timepoint*All and Species, Significant Species*D*N, Very Significant Timepoint and Timepoint*Species
-emmeans(Droughttrans, pairwise ~ Timepoint*Drought*Nitrogen|Species, adjust="holm")
 
-emmeans(Droughttrans, pairwise ~ Drought*Nitrogen, adjust="holm")
+model <- lm(trans ~ Timepoint*Species*Drought*Nitrogen, data = DamAll_Drought)
+summary(model)
+
+
+
+
+### Marginal Timepoint*All and Species, Significant Species*D*N, Very Significant Timepoint and Timepoint*Species
+emmeans(Droughttrans, pairwise ~ Drought*Nitrogen|Species*Timepoint, adjust="holm")
+
+emmeans(Droughttrans, pairwise ~ Drought|Timepoint*Species, adjust="holm")
 ### Aristida- No difference
 ### Pityopsis- Marginal Pure Control vs D*N, Significant Pure Drought vs Drought*N; D*N low Herbivory vs Pure Control and Drought Control
 ### Pteridium- No difference
@@ -223,11 +237,16 @@ anova(Season, type=3)
 Anova(Season, type = 3)
 ### Significant N*P and Potassium, Very Significant Timepoint*Species, Species, Timepoint and Timepoint*All
 
+model <- lm(trans ~ Timepoint*Species*Nitrogen*Phosphorous*Potassium, data = DamAll_Seasonal)
+summary(model)
+
+
+
 
 emmeans(Season, pairwise ~ Potassium, adjust="holm")
 ### Potassium herbivorized less than Control, supports selective feeding hypothesis
 
-emmeans(Season, pairwise ~ Species|Timepoint, adjust="holm")
+emmeans(Season, pairwise ~ Nitrogen*Phosphorous*Potassium|Species*Timepoint, adjust="holm")
 ### All different except Pityopsis-Pteridium and Pteridium-Vaccinium in TP1; Aristida herbivorized more
 ### Aristida-Pteridium, Pityopsis-Pteridium, and Pteridium-Vaccinium are different in TP2; Pteridium herbivorized more
 ### Aristida is different from everything and Pityopsis is different from Pteridium in TP3; Aristida herbivorized less, Pityopsis herbivorized less than Pteridium
