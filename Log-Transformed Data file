@@ -362,13 +362,123 @@ emmeans(Season, pairwise ~ Timepoint, adjust="holm")
 emmeans(Season, pairwise ~ Phosphorous, adjust="holm")
 
 #### Bugtrans ####
+BugMetrics<-read.csv("BugMetrics.csv") %>%
+  select(-X)
+BugMetrics22<-BugMetrics%>%
+  filter(Year=="2022")%>%
+  filter(Timepoint=="2")
+BugGroup<-BugMetrics22%>%
+  ungroup()%>%
+  group_by(Species, Order, Family)%>%
+  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
+BugGroup<- BugMetrics22 %>%
+  ungroup() %>%
+  group_by(Timepoint, Species, Order, Family) %>%
+  summarise(AverageHerbivory = mean(totaldam, na.rm = TRUE),
+            se = stderror(totaldam))
 
-Bugtrans<-lmerTest::lmer(data=DamAll_ArthHerb,
-                         trans~Year*Order_Family*FamCount*Species*Treatment+ (1|Block)+ (1|Plot:Year))
+
+
+Bugtrans<-lmerTest::lmer(data=BugMetrics22,
+                         trans~Timepoint*Order*Species*Nitrogen*Phosphorous*Potassium+ (1|Block)+ (1|Plot:Timepoint))
 #check this with and with out the plot factor being in there
 Bugtrans
 Anova(Bugtrans, type=3)
 
+
+modelBugBP <- lm(trans ~ MaxBPdom, data = BugMetrics22)
+summary(modelBugBP)
+BugBPGraph<-ggplot(data = BugMetrics22, aes(x = MaxBPdom, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Berger-Parker Diversity",
+       y = "Herbivore Damage (log(%))")+
+  theme_classic()
+BugBPGraph
+
+
+modelBugRich <- lm(trans ~ MaxBugRichness, data = BugMetrics22)
+summary(modelBugRich)
+BugRichGraph<-ggplot(data = BugMetrics22, aes(x = MaxBugRichness, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Arthropod Richness",
+       y = "Herbivore Damage (log(%))")+
+  theme_classic()
+BugRichGraph
+
+
+modelBugEvar <- lm(trans ~ MaxBugEvar, data = BugMetrics22)
+summary(modelBugEvar)
+BugEvarGraph<-ggplot(data = BugMetrics22, aes(x = MaxBugEvar, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Arthropod Evar",
+       y = "Herbivore Damage (log(%))")+
+  theme_classic()
+BugEvarGraph
+
+
+modelBugShann <- lm(trans ~ MaxBugShannon, data = BugMetrics22)
+summary(modelBugShann)
+BugShannGraph<-ggplot(data = BugMetrics22, aes(x = MaxBugShannon, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Arthropod Shannon Diversity",
+       y = "Herbivore Damage (log(%))")+
+  theme_classic()
+BugShannGraph
+
+
+modelOrth <- lm(trans ~ OrthCount, data = BugMetrics22)
+summary(modelOrth)
+OrthGraph<-ggplot(data = BugMetrics22, aes(x = OrthCount, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Grasshopper Abundance",
+       y = "Herbivore Damage (log(%))")+
+  theme_classic()
+OrthGraph
+
+modelHopp <- lm(trans ~ HopperCount, data = BugMetrics22)
+summary(modelHopp)
+HoppGraph<-ggplot(data = BugMetrics22, aes(x = HopperCount, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Leafhopper Abundance",
+       y = "Herbivore Damage (log(%))")+
+  theme_classic()
+HoppGraph
+
+modelWolf <- lm(trans ~ WolfSpidCount, data = BugMetrics22)
+summary(modelWolf)
+WolfGraph<-ggplot(data = BugMetrics22, aes(x = WolfSpidCount, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Wolf Spider Abundance",
+       y = "Herbivore Damage (log(%))")+
+  theme_classic()
+WolfGraph
+
+modelSeed <- lm(trans ~ SeedBugCount, data = BugMetrics22)
+summary(modelSeed)
+SeedGraph<-ggplot(data = BugMetrics22, aes(x = SeedBugCount, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Seed Bug Abundance",
+       y = "Herbivore Damage (log(%))")+
+  theme_classic()
+SeedGraph
+
+modelAnt <- lm(trans ~ AntCount, data = BugMetrics22)
+summary(modelAnt)
+AntGraph<-ggplot(data = BugMetrics22, aes(x = AntCount, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Ant Abundance",
+       y = "Herbivore Damage (log(%))")+
+  theme_classic()
+AntGraph
 
 
 
