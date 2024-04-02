@@ -231,7 +231,69 @@ write.csv(DamAll_ArthHerb, "Arthherb.csv")
 DamAll_ArthHerb<-read.csv("Arthherb.csv")%>%
   filter(Drought=="C")%>%
   filter(Order_Family!="_")%>%
-  select(-X)
+  select(-X) %>%
+  separate(col=Order_Family, into=c('Order', 'Family'), sep='_')
+DamAll_ArthHerbT2<-DamAll_ArthHerb%>%
+  filter(Timepoint=="2")
+DamAll_ArthHerb22<-DamAll_ArthHerb%>%
+  filter(Year=="2022")
+
+library(codyn)
+install.packages("abdiv")
+library(abdiv)
+
+MaxBugBPdom <- DamAll_ArthHerb %>%
+  group_by(Year, Block, Plot, Timepoint)%>%
+  reframe(MaxBPdom = berger_parker_d(FamCount))
+
+MaxCommStructure <- DamAll_ArthHerb%>%
+  community_structure(time.var=c("Year", "Timepoint"), abundance.var="FamCount",replicate.var="Plot", metric=c("Evar")) %>%
+  rename(MaxBugRichness = richness, MaxBugEvar=Evar)
+
+MaxCommDiv <- DamAll_ArthHerb %>%
+  community_diversity(time.var=c("Year", "Timepoint"), abundance.var="FamCount", replicate.var="Plot", metric=c("Shannon")) %>%
+  rename(MaxBugShannon = Shannon)
+####BugMetrics####
+BugMetrics<-full_join(MaxBugBPdom, MaxCommStructure)%>%
+  full_join(MaxCommDiv)
+
+FinalBugMetrics<-full_join(BugMetrics, DamAll_ArthHerb)
+BugMetrics<-full_join(BugMetrics, BugAbundancePlot)
+write.csv(FinalBugMetrics, "BugMetrics.csv")
+
+
+BugAbundancePlot<-full_join(OrthAbundancePlot,HopperAbundancePlot)%>%
+  full_join(WolfSpiderAbundancePlot)%>%
+  full_join(AntAbundancePlot)%>%
+  full_join(SeedBugAbundancePlot)
+
+OrthAbundancePlot <- BugMetrics %>%
+  group_by(Year, Timepoint, Plot) %>%
+  summarise(OrthCount = sum(FamCount[Family == "Acrididae"], na.rm = TRUE))
+
+
+HopperAbundancePlot <- BugMetrics %>%
+  group_by(Year, Timepoint, Plot) %>%
+  summarise(HopperCount = sum(FamCount[Family == "Cicadellidae"], na.rm = TRUE))
+
+
+
+WolfSpiderAbundancePlot <- BugMetrics %>%
+  group_by(Year, Timepoint, Plot) %>%
+  summarise(WolfSpidCount = sum(FamCount[Family == "Lycosidae"], na.rm = TRUE))
+
+AntAbundancePlot <- BugMetrics %>%
+  group_by(Year, Timepoint, Plot) %>%
+  summarise(AntCount = sum(FamCount[Family == "Formicidae"], na.rm = TRUE))
+
+
+SeedBugAbundancePlot <- BugMetrics %>%
+  group_by(Year, Timepoint, Plot) %>%
+  summarise(SeedBugCount = sum(FamCount[Family == "Rhyparochromidae"], na.rm = TRUE))
+
+
+
+
 
 
 missing_rows <- filter(DamAll_ArthHerb, is.na(Block) | is.na(Species) | is.na(totaldam) | is.na(trans))
@@ -1298,6 +1360,16 @@ summary(model)
 
 #### Insect Community Figure and statistics
 
+
+modelNperc <- lm(trans ~ Nperc, data = BugMetrics22)
+summary(modelNperc)
+NpercGraph<-ggplot(data = LeafNuts, aes(x = Nperc, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Leaf Tissue % N",
+       y = "Herbivore Damage (log(%))")+
+  theme_classic()
+NpercGraph
 
 
 
