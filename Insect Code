@@ -67,8 +67,7 @@ Vac_20Clean<-VacInsect_2020%>%
   group_by(Plot, Treatment, Order_Family, Year, Time.Point) %>%
   summarise(FamCount=length(Order_Family)) %>%
   ungroup() %>%
-  select(-Treatment) %>%
-  pivot_wider(names_from = Order_Family, values_from = FamCount)
+  select(-Treatment)
 
 Vac_Ord20Clean<-VacInsect_2020%>%
   mutate(Order_Family=paste(Order, Family, sep="_")) %>%
@@ -79,8 +78,7 @@ Vac_Ord20Clean<-VacInsect_2020%>%
   group_by(Plot, Treatment, Order, Year, Time.Point) %>%
   summarise(OrdCount=length(Order)) %>%
   ungroup()%>%
-  select(-Treatment)%>%
-  pivot_wider(names_from = Order, values_from = OrdCount)
+  select(-Treatment)
 
 
 ##2021##
@@ -93,8 +91,7 @@ Vac_21Clean<-VacInsect_2021%>%
   group_by(Plot, Treatment, Order_Family, Year, Time.Point) %>%
   summarise(FamCount=length(Order_Family)) %>%
   ungroup() %>%
-  select(-Treatment) %>%
-  pivot_wider(names_from = Order_Family, values_from = FamCount)
+  select(-Treatment)
 
 Vac_Ord21Clean<-VacInsect_2021%>%
   mutate(Order_Family=paste(Order, Family, sep="_")) %>%
@@ -105,8 +102,7 @@ Vac_Ord21Clean<-VacInsect_2021%>%
   group_by(Plot, Treatment, Order, Year, Time.Point) %>%
   summarise(OrdCount=length(Order)) %>%
   ungroup()%>%
-  select(-Treatment)%>%
-  pivot_wider(names_from = Order, values_from = OrdCount)
+  select(-Treatment)
 
 
 ##2022##
@@ -118,8 +114,7 @@ Vac_22Clean<-VacInsect_2022%>%
   group_by(Plot, Treatment, Order_Family, Year, Time.Point) %>%
   summarise(FamCount=length(Order_Family)) %>%
   ungroup() %>%
-  select(-Treatment) %>%
-  pivot_wider(names_from = Order_Family, values_from = FamCount)
+  select(-Treatment)
 
 Vac_Ord22Clean <- VacInsect_2022 %>%
   mutate(Order_Family = paste(Order, Family, sep = "_"),
@@ -127,8 +122,7 @@ Vac_Ord22Clean <- VacInsect_2022 %>%
   filter(Order != "Body parts" & Order != "Body Parts" & Order != "") %>%
   group_by(Plot, Order, Year, Time.Point) %>%
   summarise(OrdCount = n()) %>%
-  ungroup() %>%
-  pivot_wider(names_from = Order, values_from = OrdCount)
+  ungroup()
 
 ##2023##
 Vac_23Clean<-VacInsect_2023%>%
@@ -140,8 +134,7 @@ Vac_23Clean<-VacInsect_2023%>%
   group_by(Plot, Treatment, Order_Family, Year, Time.Point) %>%
   summarise(FamCount=length(Order_Family)) %>%
   ungroup() %>%
-  select(-Treatment) %>%
-  pivot_wider(names_from = Order_Family, values_from = FamCount)
+  select(-Treatment)
 
 Vac_Ord23Clean <- VacInsect_2023 %>%
   mutate(Order_Family = paste(Order, Family, sep = "_"),
@@ -150,8 +143,7 @@ Vac_Ord23Clean <- VacInsect_2023 %>%
   filter(Order != "Body parts" & Order != "Body Parts" & Order != "") %>%
   group_by(Plot, Order, Year, Time.Point) %>%
   summarise(OrdCount = n()) %>%
-  ungroup() %>%
-  pivot_wider(names_from = Order, values_from = OrdCount)
+  ungroup()
 
 ##OrderYear####
 
@@ -168,7 +160,7 @@ write.csv(OrderYearsFinal, "OrderyearsFinal.csv")
 
 ##FamYear####
 Vac20_21<-full_join(Vac_20Clean, Vac_21Clean)
-Vac20_21$Time.Point <- as.numeric(VacOrd20_21$Time.Point)
+Vac20_21$Time.Point <- as.numeric(Vac20_21$Time.Point)
 
 Vac_23Clean$Time.Point<-as.numeric(Vac_23Clean$Time.Point)
 Vac_22Clean$Araneae_Lycosidae<-as.numeric(as.character(unlist(Vac_22Clean$Araneae_Lycosidae)))
@@ -179,8 +171,7 @@ Vac_22Clean <- VacInsect_2022 %>%
   filter(Order != "Body parts" & Order != "Body Parts") %>%
   group_by(Plot, Order_Family, Year, Time.Point) %>%
   summarise(FamCount = length(Order_Family)) %>%
-  ungroup() %>%
-  pivot_wider(names_from = Order_Family, values_from = FamCount)
+  ungroup()
 
 
 duplicate_rows <- Vac_22Clean %>%
@@ -198,8 +189,54 @@ Vac22_23<-full_join(Vac_22Clean, Vac_23Clean)
 
 FamYearsFinal<-full_join(Vac20_21,Vac22_23)
 
+FamYearsFinal$Time.Point<-as.numeric(FamYearsFinal$Time.Point)
+colnames(FamYearsFinal)[colnames(FamYearsFinal) == "Time.Point"] <- "Timepoint"
+FamYearsFinal<-FamYearsFinal %>%
+  mutate(Treatment = ifelse(Plot %in% c("1", "11", "28"), 'NP', Plot)) %>%
+  mutate(Treatment = ifelse(Plot %in% c("2", "19", "21"), 'PK', Treatment)) %>%
+  mutate(Treatment = ifelse(Plot %in% c("3", "20", "27"), 'C+Shel', Treatment)) %>%
+  mutate(Treatment = ifelse(Plot %in% c("4", "17", "25"), 'K', Treatment)) %>%
+  mutate(Treatment = ifelse(Plot %in% c("10", "16", "22"), 'C', Treatment)) %>%
+  mutate(Treatment = ifelse(Plot %in% c("5", "13", "26"), 'P', Treatment)) %>%
+  mutate(Treatment = ifelse(Plot %in% c("6", "14", "23"), 'NPK+Shel', Treatment)) %>%
+  mutate(Treatment = ifelse(Plot %in% c("7", "12", "24"), 'N', Treatment)) %>%
+  mutate(Treatment = ifelse(Plot %in% c("9", "18", "30"), 'NK', Treatment)) %>%
+  mutate(Treatment = ifelse(Plot %in% c("8", "15", "29"), 'NPK', Treatment)) %>%
+  filter(Treatment!="C+Shel")%>%
+  filter(Treatment!="NPK+Shel")
+FamYearsFinal<-left_join(FamYearsFinal, Converted)%>%
+  mutate(Block = ifelse(Plot %in% c(1:10), "1", Plot)) %>%
+  mutate(Block= ifelse(Plot %in% c(11:20), "2", Block)) %>%
+  mutate(Block=ifelse(Plot %in% c(21:30), "3", Block))
+FamYearsFinal$Block<-as.numeric(FamYearsFinal$Block)
+DamAll_ArthHerb3<-full_join(FamYearsFinal, DamAll)
+
+
+Dam_All_join<-DamAll%>%
+ mutate(CYearC = ifelse(Year %in% 20, "2020", Year)) %>%
+ mutate(CYearC= ifelse(Year %in% 21, "2021", CYearC)) %>%
+ mutate(CYearC= ifelse(Year %in% 22, "2022", CYearC)) %>%
+ mutate(CYearC=ifelse(Year %in% 23, "2023", CYearC))
+Dam_All_join<- Dam_All_join%>%
+  ungroup()%>%
+  select(CYearC,Block, Plot, Timepoint, Species, Treatment, Nitrogen, Phosphorous, Potassium, totaldam, trans)%>%
+  rename(Year=CYearC)
+
+
 write.csv(FamYearsFinal, "FamyearsFinal.csv")
 
+
+DamAll_ArthHerb<-full_join(FamYearsFinal, Dam_All_join)
+write.csv(DamAll_ArthHerb, "Arthherb.csv")
+DamAll_ArthHerb<-read.csv("Arthherb.csv")%>%
+  filter(Drought=="C")%>%
+  filter(Order_Family!="_")%>%
+  select(-X)
+
+
+missing_rows <- filter(DamAll_ArthHerb, is.na(Block) | is.na(Species) | is.na(totaldam) | is.na(trans))
+print(missing_rows)
+DamAll_ArthHerb2 <- drop_na(DamAll_ArthHerb, Block, Species, totaldam, trans)
 
 
 Allregress22<-Allregress22%>%
@@ -1179,7 +1216,7 @@ summary(modelgramcov)
 gramcovGraph<-ggplot(data = DamAll_Reg22, aes(x = Maxgraminoidcov, y = trans)) +
   geom_point(colour = "dark grey") +
   geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
-  labs(x = "Graminoid Cover",
+  labs(x = "Grass Cover",
        y = "Herbivore Damage (log(%))")+
   theme_classic()
 gramcovGraph
@@ -1245,7 +1282,7 @@ summary(modelrich)
 richGraph<-ggplot(data = DamAll_Reg22, aes(x = MaxRichness, y = trans)) +
   geom_point(colour = "dark grey") +
   geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
-  labs(x = "Species Richness",
+  labs(x = "Plant Species Richness",
        y = "Herbivore Damage (log(%))")+
   theme_classic()
 richGraph
