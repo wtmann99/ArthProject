@@ -211,10 +211,10 @@ model <- lm(trans ~ Timepoint*Species*Drought*Nitrogen, data = DamAll_Drought)
 summary(model)
 
 
-
+library(emmeans)
 
 ### Marginal Timepoint*All and Species, Significant Species*D*N, Very Significant Timepoint and Timepoint*Species
-emmeans(Droughttrans, pairwise ~ Drought*Nitrogen|Species*Timepoint, adjust="holm")
+emmeans(Droughttrans, pairwise ~ Drought*Nitrogen, adjust="holm")
 
 emmeans(Droughttrans, pairwise ~ Drought|Timepoint*Species, adjust="holm")
 ### Aristida- No difference
@@ -367,26 +367,22 @@ BugMetrics<-read.csv("BugMetrics.csv") %>%
 BugMetrics22<-BugMetrics%>%
   filter(Year=="2022")%>%
   filter(Timepoint=="2")
+LeafNuts <- DamJuly2022 %>% 
+  select(Block, Plot, Species, totaldam, trans, Nperc, Kperc, Pperc)
+LeafNuts <- DamJuly2022 %>% 
+  select(Block, Plot, Species, totaldam, trans, Nperc, Kperc, Pperc)
+
 BugGroup<-BugMetrics22%>%
-  ungroup()%>%
-  group_by(Species, Order, Family)%>%
-  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
-BugGroup<- BugMetrics22 %>%
-  ungroup() %>%
-  group_by(Timepoint, Species, Order, Family) %>%
-  summarise(AverageHerbivory = mean(totaldam, na.rm = TRUE),
-            se = stderror(totaldam))
+  select(Block, Plot,Species, Order, Family, trans, totaldam, MaxBugRichness, MaxBPdom, MaxBugEvar, MaxBugShannon)
 
 
-
-Bugtrans<-lmerTest::lmer(data=BugMetrics22,
-                         trans~Timepoint*Order*Species*Nitrogen*Phosphorous*Potassium+ (1|Block)+ (1|Plot:Timepoint))
+Bugtrans<-lmerTest::lmer(data=BugMetrics22, trans~Family*Species*Nitrogen*Phosphorous*Potassium+ (1|Block)+ (1|Plot:Timepoint))
 #check this with and with out the plot factor being in there
 Bugtrans
 Anova(Bugtrans, type=3)
 
 
-modelBugBP <- lm(trans ~ MaxBPdom, data = BugMetrics22)
+modelBugBP <- lm(trans ~ MaxBPdom, data = BugGroup)
 summary(modelBugBP)
 BugBPGraph<-ggplot(data = BugMetrics22, aes(x = MaxBPdom, y = trans)) +
   geom_point(colour = "dark grey") +
@@ -485,7 +481,6 @@ AntGraph
 emmeans(Season, pairwise ~ Potassium, adjust="holm")
 emmeans(Season, pairwise ~ Timepoint, adjust="holm")
 emmeans(Season, pairwise ~ Phosphorous, adjust="holm")
-
 
 
 
