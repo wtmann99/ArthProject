@@ -2,7 +2,7 @@ setwd("~/WillMfiles/Koerner Lab/Koerner Lab/R Studio files/Grad Research")
 library(tidyverse)
 
 VacInsect_2023 <- read.csv("D-Vac LLP Insect ID (2023).csv", stringsAsFactors = F)
-VacInsect_2022 <- read.csv("D-Vac LLP Insect ID (2022).csv", stringsAsFactors = F) %>%
+VacInsect_2022 <- read.csv("D-Vac LLP Insect ID (2022)1.csv", stringsAsFactors = F) %>%
   select(-X)
 VacInsect_2021 <- read.csv("D-Vac LLP Insect ID (2021).csv")
 VacInsect_2020 <- read.csv("D-Vac LLP Insect ID (2020).csv")
@@ -80,7 +80,6 @@ Vac_Ord20Clean<-VacInsect_2020%>%
   ungroup()%>%
   select(-Treatment)
 
-
 ##2021##
 Vac_21Clean<-VacInsect_2021%>%
   mutate(Order_Family=paste(Order, Family, sep="_")) %>%
@@ -103,7 +102,16 @@ Vac_Ord21Clean<-VacInsect_2021%>%
   summarise(OrdCount=length(Order)) %>%
   ungroup()%>%
   select(-Treatment)
-
+Vac21Weight<-VacInsect_2021%>%
+  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
+  mutate(Time.Point=paste('2'))%>%
+  filter(Order!="Body parts") %>%
+  filter(Order!="Body Parts")%>%
+  select(Plot, Time.Point, Weight..g.)%>%
+  rename(Weight=Weight..g.)%>%
+  filter(Weight>0)%>%
+  mutate(Year=paste("2021")) %>%
+  rename(Timepoint=Time.Point)
 
 ##2022##
 Vac_22Clean<-VacInsect_2022%>%
@@ -123,6 +131,14 @@ Vac_Ord22Clean <- VacInsect_2022 %>%
   group_by(Plot, Order, Year, Time.Point) %>%
   summarise(OrdCount = n()) %>%
   ungroup()
+Vac22Weight<-VacInsect_2022%>%
+  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
+  select(Plot, Time.Point, Weight..g.)%>%
+  rename(Weight=Weight..g.)%>%
+  filter(Weight>0)%>%
+  mutate(Year=paste("2022"))%>%
+  rename(Timepoint=Time.Point)
+
 
 ##2023##
 Vac_23Clean<-VacInsect_2023%>%
@@ -144,6 +160,31 @@ Vac_Ord23Clean <- VacInsect_2023 %>%
   group_by(Plot, Order, Year, Time.Point) %>%
   summarise(OrdCount = n()) %>%
   ungroup()
+
+Vac23Weight<-VacInsect_2023%>%
+  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
+  filter(Order!="Body parts") %>%
+  filter(Order!="Body Parts")%>%
+  mutate(Timepoint=paste("2"))%>%
+  select(Plot, Timepoint, Weight)%>%
+  filter(Weight>0)%>%
+  mutate(Year=paste("2023"))
+
+Vac21Weight$Timepoint<-as.numeric(Vac21Weight$Timepoint)
+Vac22Weight$Timepoint<-as.numeric(Vac22Weight$Timepoint)
+Vac23Weight$Timepoint<-as.numeric(Vac23Weight$Timepoint)
+
+Vac21Weight$Year<-as.numeric(Vac21Weight$Year)
+Vac22Weight$Year<-as.numeric(Vac22Weight$Year)
+Vac23Weight$Year<-as.numeric(Vac23Weight$Year)
+Vac21Weight$Weight<-as.numeric(Vac21Weight$Weight)
+Vac22Weight$Weight<-as.numeric(Vac22Weight$Weight)
+Vac23Weight$Weight<-as.numeric(Vac23Weight$Weight)
+
+
+PlotWeightsYears<-full_join(Vac21Weight, Vac22Weight)%>%
+  full_join(Vac23Weight)
+
 
 ##OrderYear####
 
@@ -228,10 +269,8 @@ write.csv(FamYearsFinal, "FamyearsFinal.csv")
 
 DamAll_ArthHerb<-full_join(FamYearsFinal, Dam_All_join)
 write.csv(DamAll_ArthHerb, "Arthherb.csv")
-DamAll_ArthHerb<-read.csv("Arthherb.csv")%>%
-  filter(Drought=="C")%>%
-  filter(Order_Family!="_")%>%
-  select(-X) %>%
+DamAll_ArthHerb<-DamAll_ArthHerb%>%
+  pivot_longer(cols= Araneae_Miturgidae:Araneaee_Araneidae, names_to = "Order_Family", values_to="FamCount")%>%
   separate(col=Order_Family, into=c('Order', 'Family'), sep='_')
 DamAll_ArthHerbT2<-DamAll_ArthHerb%>%
   filter(Timepoint=="2")
@@ -527,7 +566,7 @@ HerbCon21<- Herb21Stretch %>%
   mutate(Treatment_Year=paste(Treatment, Year, sep="_"))
 
 
-Herb22<-read.csv("Mann_Leaf_Damage_Sandhill_Gamelands_2022.csv", na.strings = "") %>%
+Herb22<-read.csv("Mann_Damage2022_v2.csv", na.strings = "") %>%
   select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
   drop_na(Plot) %>%
   group_by(Block, Plot, Treatment, Replicate, Species, Timepoint) %>%
@@ -544,12 +583,12 @@ Herb22<-read.csv("Mann_Leaf_Damage_Sandhill_Gamelands_2022.csv", na.strings = ""
   filter(Plot!="23") %>%
   filter(Plot!="27")%>%
   group_by(Year,Timepoint, Block, Plot, Treatment, Replicate, Species) %>%
-  pivot_longer(cols= Chew:Other.Fungi, names_to = "HerbType", values_to="HerbPercent") %>%
+  #pivot_longer(cols= Chew:Other.Fungi, names_to = "HerbType", values_to="HerbPercent") %>%
   ungroup()%>%
-  mutate(HerbPercent=as.numeric(HerbPercent)) %>%
+  mutate(HerbPerc=as.numeric(HerbPerc)) %>%
   filter(HerbType==c("Chew", "Mine.Suck")) %>%
   group_by(Year, Timepoint, Block, Plot, Treatment, Replicate, Species) %>%
-  summarize(totaldam=sum(HerbPercent))
+  summarize(totaldam=sum(HerbPerc))
 
 Herb22<-Herb22%>%
   summarise(Block, Plot, Year, Treatment, Time.Point, HerbPerc)%>%
@@ -564,7 +603,8 @@ Herb22$HerbPerc <- as.numeric(Herb22$HerbPerc)
 TP1Herb22<-read.csv("Mann_Leaf_Damage_Sandhill_Gamelands_2022.csv", na.strings = "")%>%
   filter(Timepoint..1.2.3.=="1")
 
-TP1Herb22Stretch<- TP1Herb22 %>%
+TP1Herb22Stretch<- Herb22 %>%
+  filter(Timepoint)
   select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
   drop_na(Plot) %>%
   group_by(Block, Plot, Treatment, Replicate, Species) %>%
