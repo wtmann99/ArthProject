@@ -213,10 +213,10 @@ DamAll_ArthHerb3<-full_join(FamYearsFinal, DamAll)
 
 
 Dam_All_join<-DamAll%>%
- mutate(CYearC = ifelse(Year %in% 20, "2020", Year)) %>%
- mutate(CYearC= ifelse(Year %in% 21, "2021", CYearC)) %>%
- mutate(CYearC= ifelse(Year %in% 22, "2022", CYearC)) %>%
- mutate(CYearC=ifelse(Year %in% 23, "2023", CYearC))
+  mutate(CYearC = ifelse(Year %in% 20, "2020", Year)) %>%
+  mutate(CYearC= ifelse(Year %in% 21, "2021", CYearC)) %>%
+  mutate(CYearC= ifelse(Year %in% 22, "2022", CYearC)) %>%
+  mutate(CYearC=ifelse(Year %in% 23, "2023", CYearC))
 Dam_All_join<- Dam_All_join%>%
   ungroup()%>%
   select(CYearC,Block, Plot, Timepoint, Species, Treatment, Nitrogen, Phosphorous, Potassium, totaldam, trans)%>%
@@ -767,14 +767,13 @@ HYearsNoDrought<-HYearsNoDrought+geom_smooth(method = "lm", col="black")
 HYearsNoDrought
 
 z <- ggplot(DamAll_Nuttrans, aes(Treatment,totaldam)) + geom_col()
-z + facet_grid(Species~Year) +labs(y = "Arthropod Herbivore Damage by Year") +theme_classic()
+z + facet_grid(Species~Year) +labs(y = "Arthropod Herbivore Damage by Year")
 
 
 SpxHerb<-DamAll_Nuttrans %>%
   group_by(Species) %>%
   summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
-spherb <- ggplot(SpxHerb, aes(Species,AverageHerbivory)) + geom_col() + geom_errorbar(aes(x=Species, ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)
-spherb +labs(y = "Arthropod Herbivore Damage")
+spherb <- ggplot(SpxHerb, aes(Species,AverageHerbivory)) + geom_col() + geom_errorbar(aes(x=Species, ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+labs(y = "Herbivore Damage (%)")
 spherb +theme_classic()+theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 
 y <- ggplot(DamAll_Nuttrans, aes(Species,totaldam)) + geom_col()
@@ -847,28 +846,28 @@ KsXSp<-ggplot(KXSp, aes(x = Potassium, y = AverageHerbivory, color = Species)) +
 KsXSp
 #Saved#
 
-KsXSp<-ggplot(KXSp, aes(x = Species, y = AverageHerbivory, color = Potassium)) +
+KsXSp2<-ggplot(KXSp, aes(x = Species, y = AverageHerbivory, color = Potassium)) +
   geom_boxplot()+
   geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
   theme_classic()
 
-KbySp<-ggplot(data=KXSp2, aes(x=Potassium, y=HerbivoreDamage,fill=Species)) +
-  geom_boxplot()+ labs(y="Herbivore Damage by Species") + theme_classic() + theme(axis.title.y = element_blank(), axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+KbySp<-ggplot(data=KXSp2, aes(x=Species, y=HerbivoreDamage,fill=Potassium)) +
+  geom_boxplot()+ labs(y="Herbivore Damage (%)") + theme_classic() + theme(axis.title.y = element_blank(), axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))+ scale_fill_discrete(name="Nutrient Treatment", breaks=c("C", "K"),labels=c("Control", "Treatment")) 
 KbySp
 
 NXSp2<-DamAll_Nuttrans %>%
   group_by(Nitrogen, Species) %>%
   summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam), HerbivoreDamage=(totaldam))
 
-NbySp<-ggplot(data=NXSp2, aes(x=Nitrogen, y=HerbivoreDamage,fill=Species)) +
-  geom_boxplot()+ labs(y="Herbivore Damage by Species") + theme_classic() +theme(legend.position = "none") + theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+NbySp<-ggplot(data=NXSp2, aes(x=Species, y=HerbivoreDamage,fill=Nitrogen)) +
+  geom_boxplot()+ labs(y="Herbivore Damage (%)") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 NbySp
 
 PXSp2<-DamAll_Nuttrans %>%
   group_by(Phosphorous, Species) %>%
   summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam), HerbivoreDamage=(totaldam))
 
-PbySp<-ggplot(data=PXSp2, aes(x=Phosphorous, y=HerbivoreDamage,fill=Species)) +
+PbySp<-ggplot(data=PXSp2, aes(x=Species, y=HerbivoreDamage, fill=Phosphorous)) +
   geom_boxplot()+ labs(y="Herbivore Damage by Species")+ theme_classic() +theme(legend.position = "none") + theme(axis.title.y = element_blank(), axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 PbySp
 
@@ -912,7 +911,7 @@ Ar
 Aris2<-NPK2%>%
   filter(Species=="Aristida_stricta")
 Ar2 <-ggplot(data=Aris2, aes(x=factor(Treatment, level= level_order), y=HerbivoreDamage,fill=Treatment)) +
-  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage on A. stricta") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage(%)") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 Ar2
 
 
@@ -932,7 +931,7 @@ Pt
 Pter2<-NPK2%>%
   filter(Species=="Pteridium_aquilinum")
 Pt2 <-ggplot(data=Pter2, aes(x=factor(Treatment, level= level_order), y=HerbivoreDamage,fill=Treatment)) +
-  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage on P. aquilinum") + theme_classic()+theme(legend.position = "none") + theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage(%)") + theme_classic()+theme(legend.position = "none") + theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 Pt2
 
 
@@ -950,7 +949,7 @@ Pi
 Pity2<-NPK2%>%
   filter(Species=="Pityopsis_aspera")
 Pi2 <-ggplot(data=Pity2, aes(x=factor(Treatment, level= level_order), y=HerbivoreDamage,fill=Treatment)) +
-  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage on P. aspera") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage(%)") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 Pi2
 
 
@@ -968,7 +967,7 @@ Va
 Vacc2<-NPK2%>%
   filter(Species=="Vaccinium_tenellum")
 Va2 <-ggplot(data=Aris2, aes(x=factor(Treatment, level= level_order), y=HerbivoreDamage,fill=Treatment)) +
-  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage on V. tenellum") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage(%)") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 Va2
 
 level_order <- c('C', 'K', 'P', 'N', 'PK', 'NK', 'NP', 'NPK') 
@@ -1008,20 +1007,20 @@ q + facet_grid(Species~Year) +labs(y = "Arthropod Herbivore Damage by Year")
 q
 
 nsd <- ggplot(NoSpDrought, aes(Treatment,AverageHerbivory)) + geom_col() + geom_errorbar(aes(x=Treatment, ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)
-nsd +labs(y = "Arthropod Herbivore Damage") + theme_classic() +theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+nsd +labs(y = "Herbivore Damage (%)") + theme_classic() +theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 
 
 
 d <- ggplot(Drought, aes(Treatment,AverageHerbivory)) + geom_col() + geom_errorbar(aes(x=Treatment, ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)
-d + facet_grid(Species~Seasonality_f) +labs(y = "Arthropod Herbivore Damage") +theme_classic()+theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold")) 
+d + facet_grid(Species~Seasonality_f) +labs(y = "Herbivore Damage (%)") +theme_classic()+theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold")) 
 #Saved#
 
 pd <- ggplot(PureDrought, aes(Drought,AverageHerbivory)) + geom_col() + geom_errorbar(aes(x=Drought, ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)
-pd + facet_grid(Species~Seasonality_f) +labs(y = "Arthropod Herbivore Damage") +theme_classic()+theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+pd + facet_grid(Species~Seasonality_f) +labs(y = "Herbivore Damage (%)") +theme_classic()+theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 
 
 HerbSpecNut22
-SpxHerbxTP<-DamAll_Seasonal %>%
+SpxHerbxTP<-DamAll_Drought %>%
   group_by(Timepoint, Species) %>%
   summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
 
@@ -1033,8 +1032,13 @@ SpxHerbxTPxDrt<-ggplot(SpxHerbxTP, aes(x = as.numeric(Timepoint), y = AverageHer
   geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
   scale_color_manual(values = cols)+
   theme_classic()+
-  theme(legend.position = c(0.2, 0.8))
-SpxHerbxTPxDrt
+  theme(legend.position = c(0.3, 0.8)) +
+  labs(x="Season", y = "Herbivore Damage (%)")+
+  scale_fill_discrete(name="Species - Drought-Net Plots")
+SpxHerbxTPxDrt+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+
+
+
 #Saved#
 
 Drttrans<-lmerTest::lmer(data=HerbDamYear,
@@ -1091,9 +1095,9 @@ SpxHerbxTPxTrt <- DamAll_Seasonal %>%
   mutate(Seasonality = ifelse(as.character(Timepoint) %in% '1', "Early", 
                               ifelse(as.character(Timepoint) %in% '2', "Middle", "Late")))
 SpxHerbxTPxTrt$Seasonality_f = factor(SpxHerbxTPxTrt$Seasonality, levels=c('Early','Middle','Late'))
-               
-p <- ggplot(SpxHerbxTPxTrt, aes(x=factor(Treatment, level= level_order),AverageHerbivory)) + geom_col()+ geom_errorbar(aes(x=Treatment, ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)
-p + facet_grid(Species~Seasonality_f) +labs(x="Treatment", y = "Arthropod Herbivore Damage") +labs(x="Treatment",y = "Arthropod Herbivore Damage") +theme_classic()
+
+p <- ggplot(SpxHerbxTPxTrt, aes(x=factor(Treatment, level= level_order),AverageHerbivory)) + geom_col()+ geom_errorbar(aes(x=Treatment, ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+p + facet_grid(Species~Seasonality_f) +labs(x="Treatment", y = "Arthropod Herbivore Damage") +labs(x="Treatment",y = "Arthropod Herbivore Damage")
 #Saved#
 
 
@@ -1127,7 +1131,7 @@ PK_Season2<-NPK_Season2%>%
 Vacc_S2<-PK_Season2%>%
   filter(Species=="Vaccinium_tenellum")
 VaS2 <-ggplot(data=Vacc_S2, aes(x=factor(Treatment, level= level_order2), y=HerbivoreDamage,fill=Treatment)) +
-  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage on V. tenellum") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage (%)") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 VaS2
 
 Va_S <- ggplot(Vacc_S, aes(Treatment,AverageHerbivory)) + 
@@ -1152,7 +1156,7 @@ Ar_S
 Aris_S2<-PK_Season2%>%
   filter(Species=="Aristida_stricta")
 ArS2 <-ggplot(data=Aris_S2, aes(x=factor(Treatment, level= level_order2), y=HerbivoreDamage,fill=Treatment)) +
-  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage on A. stricta") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage (%)") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 ArS2
 
 
@@ -1169,7 +1173,7 @@ Pt_S
 Pter_S2<-PK_Season2%>%
   filter(Species=="Pteridium_aquilinum")
 PtS2 <-ggplot(data=Pter_S2, aes(x=factor(Treatment, level= level_order2), y=HerbivoreDamage,fill=Treatment)) +
-  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage on P. aquilinum") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage (%)") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 PtS2
 
 
@@ -1186,7 +1190,7 @@ Pi_S
 Pity_S2<-PK_Season2%>%
   filter(Species=="Pityopsis_aspera")
 PiS2 <-ggplot(data=Pity_S2, aes(x=factor(Treatment, level= level_order2), y=HerbivoreDamage,fill=Treatment)) +
-  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage on P. aspera") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage (%)") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 PiS2
 
 
