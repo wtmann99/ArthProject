@@ -1,2736 +1,529 @@
-setwd("~/WillMfiles/Koerner Lab/Koerner Lab/R Studio files/Grad Research")
-library(tidyverse)
-
-VacInsect_2023 <- read.csv("D-Vac LLP Insect ID (2023).csv", stringsAsFactors = F)
-VacInsect_2022 <- read.csv("D-Vac LLP Insect ID (2022)1.csv", stringsAsFactors = F) %>%
-  select(-X)
-VacInsect_2021 <- read.csv("D-Vac LLP Insect ID (2021).csv")
-VacInsect_2020 <- read.csv("D-Vac LLP Insect ID (2020).csv")
-library(tidyverse)
-write.csv(HerbDam, "HerbDam.csv")
-HerbDamtrans<-read.csv("HerbDam.csv")
-OrderYears<-read.csv("OrderYearsFinal.csv")
-FamYears<-read.csv("FamYearsFinal.csv")
-
-#loading packages
-install.packages("vegan")
-install.packages("tidyverse")
-install.packages("codyn")
-install.packages("ggplot2")
-install.packages("reshape2")
-install.packages("plotly")
-install.packages("nmle")
-install.packages("lme4")
-install.packages("olsrr")
-install.packages("car")
-install.packages("patchwork")
-install.packages("lmerTest")
-install.packages("piecewiseSEM")
-install.packages("ggrepel")
-install.packages("lavaan")
-install.packages("semPlot")
-install.packages("MuMIn")
-install.packages("ggsignif")
-install.packages("ggpubr")
-
-library(vegan)
-library(tidyverse)
-library(codyn)
-library(ggplot2)
-library(reshape2)
-library(plotly)
-library(nlme)
+setwd("C:/Users/wtmann/OneDrive - UNCG/Documents/WillMfiles/Koerner Lab/Koerner Lab/R Studio files/Grad Research/Mann_Analyses")
+#Or whatever the local branch is
+library(multcomp)
 library(lme4)
-library(olsrr)
-library(car)
-library(patchwork)
 library(lmerTest)
-library(piecewiseSEM)
-library(ggrepel)
-library(lavaan)
-library(semPlot)
-library(MuMIn)
-library(ggsignif)
-library(ggpubr)
+library(tidyverse)
+library(car)
 
-
-
-####Insect Data####
-
-##2020##
-Vac_20Clean<-VacInsect_2020%>%
-  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
-  mutate(Year=paste('2020')) %>%
-  mutate(Time.Point=paste('2'))%>%
-  filter(Order!="Body parts") %>%
-  filter(Order!="Body Parts")%>%
-  group_by(Plot, Treatment, Order_Family, Year, Time.Point) %>%
-  summarise(FamCount=length(Order_Family)) %>%
-  ungroup() %>%
-  select(-Treatment)
-
-Vac_Ord20Clean<-VacInsect_2020%>%
-  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
-  mutate(Year=paste('2020')) %>%
-  mutate(Time.Point=paste('2'))%>%
-  filter(Order!="Body parts") %>%
-  filter(Order!="Body Parts")%>%
-  group_by(Plot, Treatment, Order, Year, Time.Point) %>%
-  summarise(OrdCount=length(Order)) %>%
-  ungroup()%>%
-  select(-Treatment)
-
-##2021##
-Vac_21Clean<-VacInsect_2021%>%
-  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
-  mutate(Year=paste('2021')) %>%
-  mutate(Time.Point=paste('2'))%>%
-  filter(Order!="Body parts") %>%
-  filter(Order!="Body Parts")%>%
-  group_by(Plot, Treatment, Order_Family, Year, Time.Point) %>%
-  summarise(FamCount=length(Order_Family)) %>%
-  ungroup() %>%
-  select(-Treatment)
-
-Vac_Ord21Clean<-VacInsect_2021%>%
-  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
-  mutate(Year=paste('2021')) %>%
-  mutate(Time.Point=paste('2'))%>%
-  filter(Order!="Body parts") %>%
-  filter(Order!="Body Parts")%>%
-  group_by(Plot, Treatment, Order, Year, Time.Point) %>%
-  summarise(OrdCount=length(Order)) %>%
-  ungroup()%>%
-  select(-Treatment)
-Vac21Weight<-VacInsect_2021%>%
-  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
-  mutate(Time.Point=paste('2'))%>%
-  filter(Order!="Body parts") %>%
-  filter(Order!="Body Parts")%>%
-  select(Plot, Time.Point, Weight..g.)%>%
-  rename(Weight=Weight..g.)%>%
-  filter(Weight>0)%>%
-  mutate(Year=paste("2021")) %>%
-  rename(Timepoint=Time.Point)
-
-##2022##
-Vac_22Clean<-VacInsect_2022%>%
-  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
-  mutate(Year=paste('2022')) %>%
-  filter(Order!="Body parts") %>%
-  filter(Order!="Body Parts")%>%
-  group_by(Plot, Treatment, Order_Family, Year, Time.Point) %>%
-  summarise(FamCount=length(Order_Family)) %>%
-  ungroup() %>%
-  select(-Treatment)
-
-Vac_Ord22Clean <- VacInsect_2022 %>%
-  mutate(Order_Family = paste(Order, Family, sep = "_"),
-         Year = "2022") %>%
-  filter(Order != "Body parts" & Order != "Body Parts" & Order != "") %>%
-  group_by(Plot, Order, Year, Time.Point) %>%
-  summarise(OrdCount = n()) %>%
-  ungroup()
-Vac22Weight<-VacInsect_2022%>%
-  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
-  select(Plot, Time.Point, Weight..g.)%>%
-  rename(Weight=Weight..g.)%>%
-  filter(Weight>0)%>%
-  mutate(Year=paste("2022"))%>%
-  rename(Timepoint=Time.Point)
-
-
-##2023##
-Vac_23Clean<-VacInsect_2023%>%
-  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
-  mutate(Year=paste('2023')) %>%
-  mutate(Time.Point=paste('2'))%>%
-  filter(Order!="Body parts") %>%
-  filter(Order!="Body Parts")%>%
-  group_by(Plot, Treatment, Order_Family, Year, Time.Point) %>%
-  summarise(FamCount=length(Order_Family)) %>%
-  ungroup() %>%
-  select(-Treatment)
-
-Vac_Ord23Clean <- VacInsect_2023 %>%
-  mutate(Order_Family = paste(Order, Family, sep = "_"),
-         Year = "2023") %>%
-  mutate(Time.Point=paste('2'))%>%
-  filter(Order != "Body parts" & Order != "Body Parts" & Order != "") %>%
-  group_by(Plot, Order, Year, Time.Point) %>%
-  summarise(OrdCount = n()) %>%
-  ungroup()
-
-Vac23Weight<-VacInsect_2023%>%
-  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
-  filter(Order!="Body parts") %>%
-  filter(Order!="Body Parts")%>%
-  mutate(Timepoint=paste("2"))%>%
-  select(Plot, Timepoint, Weight)%>%
-  filter(Weight>0)%>%
-  mutate(Year=paste("2023"))
-
-Vac21Weight$Timepoint<-as.numeric(Vac21Weight$Timepoint)
-Vac22Weight$Timepoint<-as.numeric(Vac22Weight$Timepoint)
-Vac23Weight$Timepoint<-as.numeric(Vac23Weight$Timepoint)
-
-Vac21Weight$Year<-as.numeric(Vac21Weight$Year)
-Vac22Weight$Year<-as.numeric(Vac22Weight$Year)
-Vac23Weight$Year<-as.numeric(Vac23Weight$Year)
-Vac21Weight$Weight<-as.numeric(Vac21Weight$Weight)
-Vac22Weight$Weight<-as.numeric(Vac22Weight$Weight)
-Vac23Weight$Weight<-as.numeric(Vac23Weight$Weight)
-
-
-PlotWeightsYears<-full_join(Vac21Weight, Vac22Weight)%>%
-  full_join(Vac23Weight)
-
-
-##OrderYear####
-
-VacOrd20_21<-full_join(Vac_Ord20Clean, Vac_Ord21Clean)
-VacOrd20_21$Time.Point <- as.numeric(VacOrd20_21$Time.Point)
-
-Vac_Ord23Clean$Time.Point<-as.numeric(Vac_Ord23Clean$Time.Point)
-
-Vacord22_23<-full_join(Vac_Ord22Clean, Vac_Ord23Clean)
-
-OrderYearsFinal<-full_join(VacOrd20_21,Vacord22_23)
-
-write.csv(OrderYearsFinal, "OrderyearsFinal.csv")
-
-##FamYear####
-Vac20_21<-full_join(Vac_20Clean, Vac_21Clean)
-Vac20_21$Time.Point <- as.numeric(Vac20_21$Time.Point)
-
-Vac_23Clean$Time.Point<-as.numeric(Vac_23Clean$Time.Point)
-Vac_22Clean$Araneae_Lycosidae<-as.numeric(as.character(unlist(Vac_22Clean$Araneae_Lycosidae)))
-
-Vac_22Clean <- VacInsect_2022 %>%
-  mutate(Order_Family = paste(Order, Family, sep = "_")) %>%
-  mutate(Year = "2022") %>%
-  filter(Order != "Body parts" & Order != "Body Parts") %>%
-  group_by(Plot, Order_Family, Year, Time.Point) %>%
-  summarise(FamCount = length(Order_Family)) %>%
-  ungroup()
-
-
-duplicate_rows <- Vac_22Clean %>%
-  group_by(Plot,Time.Point) %>%
-  summarise(n = n(), .groups = "drop") %>%
-  filter(n > 1L)
-
-
-
-
-
-Vac22_23<-full_join(Vac_22Clean, Vac_23Clean)
-
-
-
-FamYearsFinal<-full_join(Vac20_21,Vac22_23)
-
-FamYearsFinal$Time.Point<-as.numeric(FamYearsFinal$Time.Point)
-colnames(FamYearsFinal)[colnames(FamYearsFinal) == "Time.Point"] <- "Timepoint"
-FamYearsFinal<-FamYearsFinal %>%
-  mutate(Treatment = ifelse(Plot %in% c("1", "11", "28"), 'NP', Plot)) %>%
-  mutate(Treatment = ifelse(Plot %in% c("2", "19", "21"), 'PK', Treatment)) %>%
-  mutate(Treatment = ifelse(Plot %in% c("3", "20", "27"), 'C+Shel', Treatment)) %>%
-  mutate(Treatment = ifelse(Plot %in% c("4", "17", "25"), 'K', Treatment)) %>%
-  mutate(Treatment = ifelse(Plot %in% c("10", "16", "22"), 'C', Treatment)) %>%
-  mutate(Treatment = ifelse(Plot %in% c("5", "13", "26"), 'P', Treatment)) %>%
-  mutate(Treatment = ifelse(Plot %in% c("6", "14", "23"), 'NPK+Shel', Treatment)) %>%
-  mutate(Treatment = ifelse(Plot %in% c("7", "12", "24"), 'N', Treatment)) %>%
-  mutate(Treatment = ifelse(Plot %in% c("9", "18", "30"), 'NK', Treatment)) %>%
-  mutate(Treatment = ifelse(Plot %in% c("8", "15", "29"), 'NPK', Treatment)) %>%
-  filter(Treatment!="C+Shel")%>%
-  filter(Treatment!="NPK+Shel")
-FamYearsFinal<-left_join(FamYearsFinal, Converted)%>%
-  mutate(Block = ifelse(Plot %in% c(1:10), "1", Plot)) %>%
-  mutate(Block= ifelse(Plot %in% c(11:20), "2", Block)) %>%
-  mutate(Block=ifelse(Plot %in% c(21:30), "3", Block))
-FamYearsFinal$Block<-as.numeric(FamYearsFinal$Block)
-DamAll_ArthHerb3<-full_join(FamYearsFinal, DamAll)
-
-
-Dam_All_join<-DamAll%>%
-  mutate(CYearC = ifelse(Year %in% 20, "2020", Year)) %>%
-  mutate(CYearC= ifelse(Year %in% 21, "2021", CYearC)) %>%
-  mutate(CYearC= ifelse(Year %in% 22, "2022", CYearC)) %>%
-  mutate(CYearC=ifelse(Year %in% 23, "2023", CYearC))
-Dam_All_join<- Dam_All_join%>%
-  ungroup()%>%
-  select(CYearC,Block, Plot, Timepoint, Species, Treatment, Nitrogen, Phosphorous, Potassium, totaldam, trans)%>%
-  rename(Year=CYearC)
-
-
-write.csv(FamYearsFinal, "FamyearsFinal.csv")
-
-
-DamAll_ArthHerb<-full_join(FamYearsFinal, Dam_All_join)
-write.csv(DamAll_ArthHerb, "Arthherb.csv")
-DamAll_ArthHerb<-DamAll_ArthHerb%>%
-  pivot_longer(cols= Araneae_Miturgidae:Araneaee_Araneidae, names_to = "Order_Family", values_to="FamCount")%>%
-  separate(col=Order_Family, into=c('Order', 'Family'), sep='_')
-DamAll_ArthHerbT2<-DamAll_ArthHerb%>%
-  filter(Timepoint=="2")
-DamAll_ArthHerb22<-DamAll_ArthHerb%>%
-  filter(Year=="2022")
-
-library(codyn)
-install.packages("abdiv")
-library(abdiv)
-
-MaxBugBPdom <- DamAll_ArthHerb %>%
-  group_by(Year, Block, Plot, Timepoint)%>%
-  reframe(MaxBPdom = berger_parker_d(FamCount))
-
-MaxCommStructure <- DamAll_ArthHerb%>%
-  community_structure(time.var=c("Year", "Timepoint"), abundance.var="FamCount",replicate.var="Plot", metric=c("Evar")) %>%
-  rename(MaxBugRichness = richness, MaxBugEvar=Evar)
-
-MaxCommDiv <- DamAll_ArthHerb %>%
-  community_diversity(time.var=c("Year", "Timepoint"), abundance.var="FamCount", replicate.var="Plot", metric=c("Shannon")) %>%
-  rename(MaxBugShannon = Shannon)
-####BugMetrics####
-BugMetrics<-full_join(MaxBugBPdom, MaxCommStructure)%>%
-  full_join(MaxCommDiv)
-
-FinalBugMetrics<-full_join(BugMetrics, DamAll_ArthHerb)
-BugMetrics<-full_join(BugMetrics, BugAbundancePlot)
-write.csv(FinalBugMetrics, "BugMetrics.csv")
-
-
-BugAbundancePlot<-full_join(OrthAbundancePlot,HopperAbundancePlot)%>%
-  full_join(WolfSpiderAbundancePlot)%>%
-  full_join(AntAbundancePlot)%>%
-  full_join(SeedBugAbundancePlot)
-
-OrthAbundancePlot <- BugMetrics %>%
-  group_by(Year, Timepoint, Plot) %>%
-  summarise(OrthCount = sum(FamCount[Family == "Acrididae"], na.rm = TRUE))
-
-
-HopperAbundancePlot <- BugMetrics %>%
-  group_by(Year, Timepoint, Plot) %>%
-  summarise(HopperCount = sum(FamCount[Family == "Cicadellidae"], na.rm = TRUE))
-
-
-
-WolfSpiderAbundancePlot <- BugMetrics %>%
-  group_by(Year, Timepoint, Plot) %>%
-  summarise(WolfSpidCount = sum(FamCount[Family == "Lycosidae"], na.rm = TRUE))
-
-AntAbundancePlot <- BugMetrics %>%
-  group_by(Year, Timepoint, Plot) %>%
-  summarise(AntCount = sum(FamCount[Family == "Formicidae"], na.rm = TRUE))
-
-
-SeedBugAbundancePlot <- BugMetrics %>%
-  group_by(Year, Timepoint, Plot) %>%
-  summarise(SeedBugCount = sum(FamCount[Family == "Rhyparochromidae"], na.rm = TRUE))
-
-
-
-
-
-
-missing_rows <- filter(DamAll_ArthHerb, is.na(Block) | is.na(Species) | is.na(totaldam) | is.na(trans))
-print(missing_rows)
-DamAll_ArthHerb2 <- drop_na(DamAll_ArthHerb, Block, Species, totaldam, trans)
-
-
-Allregress22<-Allregress22%>%
-  #separate_wider_delim(Year, "-", names = c("Year", "Time.Point")) %>%
-  #separate_wider_delim(Time.Point, "P", names = c("T", "Time.Point")) %>%
-  #select(-T)
-  mutate(Time.Pointcorrected=as.integer(Allregress22$Time.Point))%>%
-  select(-Time.Point)
-
-Regress22<-Allregress22 %>%
-  filter(year=="2022")%>%
-  select(-"Year")%>%
-  rename(Time.Point=Time.Pointcorrected)
-
-
-
-InsectbyNutHerb<-left_join(Vac_22Clean, Allregress22, by=c("Plot", "Time.Point", "Year"))
-
-OrdvyNutHerb22<-left_join(Vac_Ord22Clean, Allregress22, by=c("Plot", "Time.Point", "Year"))
-
-OrderbyHerbivory22<-merge(Vacord22, Herb22, by=c("Plot", "Year", "Time.Point"), all= TRUE)
-
-####Insect Community(Order) by HerbDam22####
-OrdbyHerbDam22<-left_join(Herb22,Regress22, by=c("Plot", "Time.Point")) %>%
-  select(-Year)
-
-OrderbyHerbivory<-lm(totaldam ~ Araneae:Psocodea, data = OrdvyNutHerb22)
-summary(NewRegressN22)
-
-Nregnut22<-ggplot(Allregress22, aes(x=N, y=Nutpresence))+geom_point()
-Nregnut22<-Nregnut22+geom_smooth(method = "lm", col="black")
-Nregnut22
-
-
-
-#Separate#
-
-
-
-
-Vac_21Clean<-VacInsect_2021%>%
-  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
-  mutate(Year=paste('2021')) %>%
-  filter(Order!="Body parts") %>%
-  filter(Order!="Body Parts")%>%
-  group_by(Plot, Treatment, Order_Family, Year) %>%
-  summarise(FamCount=length(Order_Family)) %>%
-  ungroup() %>%
-  select(-Treatment) %>%
-  pivot_wider(names_from = Order_Family, values_from = FamCount)
-
-Vac_Ord21Clean<-VacInsect_2021%>%
-  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
-  mutate(Year=paste('2021')) %>%
-  filter(Order!="Body parts") %>%
-  filter(Order!="Body Parts")%>%
-  group_by(Plot, Treatment, Order, Year) %>%
-  summarise(OrdCount=length(Order)) %>%
-  ungroup()%>%
-  select(-Treatment)%>%
-  pivot_wider(names_from = Order, values_from = OrdCount)
-
-
-Vac_20Clean<-VacInsect_2020%>%
-  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
-  mutate(Year=paste('2020')) %>%
-  filter(Order!="Body parts") %>%
-  filter(Order!="Body Parts")%>%
-  group_by(Plot, Treatment, Order_Family, Year) %>%
-  summarise(FamCount=length(Order_Family)) %>%
-  ungroup()
-
-Vac20Comb<-VacInsect_2020 %>%
-  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
-  mutate(Year=paste('20')) %>%
-  group_by(Plot, Treatment, Order_Family, Order, Family, Year) %>%
-  summarise(FamCount=length(Order_Family)) %>%
-  ungroup()
-
-Vac20to21<- full_join(Vac20Comb, Vac21Comb) %>%
-  select(Plot, Treatment, Order_Family, Order, Family, Year, FamCount)
-
-
-
-Vac21Fam<- ggplot(data=Vac_21Clean, aes(x=Treatment, y=FamCount, fill=Order_Family)) +
-  geom_bar(stat="identity")
-
-Vac20Fam<- ggplot(data=Vac_20Clean, aes(x=Treatment, y=FamCount, fill=Order_Family)) +
-  geom_bar(stat="identity")
-
-Vac21Fam
-Vac20Fam
-
-
-Vac_21Ord<-VacInsect_2021%>%
-  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
-  group_by(Treatment, Order, Plot) %>%
-  summarise(OrdCount=length(Order)) %>%
-  ungroup() %>%
-  filter(Order!="Body parts") %>%
-  filter(Order!="Body Parts") %>%
-  mutate(Year=paste("21")) %>%
-  mutate(Treatment_Year=paste(Treatment, "21", sep="_")) %>%
-  group_by(Treatment_Year) %>%
-  mutate(Totalcover=sum(OrdCount)) %>%
-  mutate(Relcover=OrdCount/Totalcover) %>%
-  ungroup()
-
-Vac_20Ord<-VacInsect_2020%>%
-  mutate(Order_Family=paste(Order, Family, sep="_")) %>%
-  group_by(Treatment, Order, Plot) %>%
-  summarise(OrdCount=length(Order)) %>%
-  ungroup() %>%
-  filter(Order!="Body parts") %>%
-  filter(Order!="Body Parts") %>%
-  mutate(Year=paste("20")) %>%
-  mutate(Treatment_Year=paste(Treatment, "20", sep="_")) %>%
-  group_by(Treatment_Year) %>%
-  mutate(Totalcover=sum(OrdCount)) %>%
-  mutate(Relcover=OrdCount/Totalcover) %>%
-  ungroup()
-
-
-
-Vac_20to21Ord<-full_join(Vac_20Ord, Vac_21Ord) %>%
-  group_by(Order, Treatment_Year, Plot) %>%
-  ungroup() %>%
-  mutate(label_y = cumsum(Relcover)) %>%
-  mutate(Block = ifelse(Plot %in% c(1:10), "1", Plot)) %>%
-  mutate(Block= ifelse(Plot %in% c(11:20), "2", Block)) %>%
-  mutate(Block=ifelse(Plot %in% c(21:30), "3", Block))
-
-
-
-
-
-filter(Order!="Body parts") %>%
-  filter(Order!="Body Parts") %>%
-  filter(Treatment!='C/Shelter') %>%
-  filter(Treatment!='NPK+/Shelter')
-
-
-
-Vac21Order<- ggplot(data=Vac_21Ord, aes(x=Treatment_Year, y=Relcover, fill=Order)) +
-  geom_bar(stat="identity")
-
-
-
-Vac20Order<- ggplot(data=Vac_20Ord, aes(x=Treatment_Year, y=Relcover, fill=Order)) +
-  geom_bar(stat="identity")
-
-
-
-Vac20to21Order<- ggplot(data=Vac_20to21Ord, aes(x=Treatment_Year, y=Relcover, fill=Order)) +
-  geom_bar(stat="identity")
-
-
-
-Vac21Order
-Vac20Order
-Vac20to21Order
-
-
-Vac20to212<- full_join(Vac_21Clean, Vac_20Clean) %>%
-  mutate(Treatment_Year=paste(Treatment, Year, sep = '_'))
-
-
-
-####Herbivory Data####
-
-Herb20<-read.csv("Entered Sandhills Leaf Damage Data_2020.csv", na.strings = "") %>%
-  mutate(Year="20")
-
-Herb20Stretch<- Herb20 %>%
-  select(-Notes)%>%
-  drop_na(Plot) %>%
-  group_by(Block, Plot, Treatment, Replicate, Species) %>%
-  gather(HerbType, HerbPerc,6:11)%>%
-  ungroup() %>%
-  drop_na(HerbPerc) %>%
-  select(Block, Plot, Treatment, Replicate, Species, HerbType, HerbPerc, Year) %>%
-  filter(Species!="Chrysopsis_mariana")%>%
-  filter(Species!="Lespedeza_hirta") %>%
-  filter(HerbType==c("Chew","Mine.Suck"))
-
-Herb20Div<- Herb20 %>%
-  select(-Notes)%>%
-  drop_na(Plot) %>%
-  group_by(Block, Plot, Treatment, Replicate, Species) %>%
-  gather(HerbType, HerbPerc,6:11)%>%
-  ungroup() %>%
-  drop_na(HerbPerc) %>%
-  select(Block, Plot, Treatment, Replicate, Species, HerbType, HerbPerc) %>%
-  mutate(Year=paste("20")) %>%
-  mutate(Treatment_Year=paste(Treatment, "20", sep="_")) %>%
-  group_by(Treatment_Year) %>%
-  mutate(Totalherb=sum(HerbPerc)) %>%
-  ungroup()
-
-
-HerbCon20<- Herb20Stretch %>%
-  filter(Treatment==c("C", "NPK")) %>%
+Herb20<-read.csv("Entered Sandhills Leaf Damage Data_2020.csv") %>%
   mutate(Year="20") %>%
-  mutate(Treatment_Year=paste(Treatment, Year, sep="_"))
-
-
-
-
-
-Herb21<-read.csv("Entered Sandhills Leaf Damage Data_2021.csv", na.strings = "") %>%
-  mutate(Year="21")
-
-Herb21Stretch<- Herb21 %>%
-  select(-Notes)%>%
-  drop_na(Plot) %>%
-  group_by(Block, Plot, Treatment, Rep, Species) %>%
-  gather(HerbType, HerbPerc,6:11)%>%
+  filter(Notes!="sample not found in plot") %>% #remove 115 rows- not true 0s must be removed
+  #select (-Notes) %>%
+  filter(Species!="Chrysopsis_mariana")%>%      #this species not done in subsequent yrs
+  filter(Species!="Lespedeza_hirta") %>%
+  filter(Species!="Dichanthelium_commutatum") %>% #this species not done in subsequent yrs
+  group_by(Year, Block, Plot, Treatment, Replicate, Species) %>%
+  pivot_longer(cols= Chew:Other.Fungi, names_to = "HerbType", values_to="HerbPercent") %>%
   ungroup() %>%
-  drop_na(HerbPerc) %>%
-  filter(HerbType==c("Chew","Mine.Suck")) %>%
-  rename(Replicate=Rep)
+  filter(HerbType==c("Chew", "Mine.Suck")) %>%
+  group_by(Year, Block, Plot, Treatment, Replicate, Species) %>%
+  summarize(totaldam=sum(HerbPercent)) %>%
+  mutate(Timepoint=2)
+unique(Herb20$Species)
 
-HerbCon21<- Herb21Stretch %>%
-  filter(Treatment==c("C", "NPK")) %>%
+Herb21<-read.csv("Entered Sandhills Leaf Damage Data_2021.csv") %>%
   mutate(Year="21") %>%
-  mutate(Treatment_Year=paste(Treatment, Year, sep="_"))
-
-
-Herb22<-read.csv("Mann_Damage2022_v2.csv", na.strings = "") %>%
-  select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
-  drop_na(Plot) %>%
-  group_by(Block, Plot, Treatment, Replicate, Species, Timepoint) %>%
-  gather(HerbType, HerbPerc,6:11)%>%
+  rename(Replicate=Rep) %>%
+  filter(Notes!="no individuals") %>%
+  filter(Notes!="no plants") %>% #remove 41 rows- not true 0s must be removed - WILL check to see if i interpreted the notes correctly here
+  filter(Species!="Dichanthelium_commutatum") %>%
+  #select (-Notes) %>%
+  group_by(Year, Block, Plot, Treatment, Replicate, Species) %>%
+  pivot_longer(cols= Chew:Other.Fungi, names_to = "HerbType", values_to="HerbPercent") %>%
   ungroup() %>%
-  drop_na(HerbPerc) %>%
-  filter(HerbType==c("Chew","Mine.Suck"))%>%
-  filter(HerbPerc!="_") %>%
-  mutate(Year="22") %>%
-  filter(Plot!="3")%>%
-  filter(Plot!="6") %>%
-  filter(Plot!="14") %>%
-  filter(Plot!="20")%>%
-  filter(Plot!="23") %>%
-  filter(Plot!="27")%>%
+  filter(HerbType==c("Chew", "Mine.Suck")) %>%
+  group_by(Year, Block, Plot, Treatment, Replicate, Species) %>%
+  summarize(totaldam=sum(HerbPercent))%>%
+  mutate(Timepoint=2)
+unique(Herb21$Species)
+
+Herb22<-read.csv("Mann_Damage2022_v3.csv", na.strings = "")%>%
+  mutate(Year=paste("22"))%>%
+  #lter(Notes!="no plant") %>% #remove 59 rows- not true 0s must be removed - WILL check to see if I interpreted the notes correctly here ALSO what does the "_" mean in notes? Should these be removed too?
+  filter(Other.Fungi!="_") %>%
+  filter(Species!="Liatris_cokeri")%>%
+  #select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
   group_by(Year,Timepoint, Block, Plot, Treatment, Replicate, Species) %>%
-  #pivot_longer(cols= Chew:Other.Fungi, names_to = "HerbType", values_to="HerbPercent") %>%
+  pivot_longer(cols= Chew:Other.Fungi, names_to = "HerbType", values_to="HerbPercent") %>%
   ungroup()%>%
-  mutate(HerbPerc=as.numeric(HerbPerc)) %>%
+  mutate(HerbPercent=as.numeric(HerbPercent)) %>%
   filter(HerbType==c("Chew", "Mine.Suck")) %>%
   group_by(Year, Timepoint, Block, Plot, Treatment, Replicate, Species) %>%
-  summarize(totaldam=sum(HerbPerc))
+  summarize(totaldam=sum(HerbPercent))
+unique(Herb22$Species)
 
-Herb22<-Herb22%>%
-  summarise(Block, Plot, Year, Treatment, Time.Point, HerbPerc)%>%
-  group_by(Block, Plot, Year, Treatment, Time.Point) %>%
-  filter(HerbPerc!="_")%>%
-  summarize(totaldam= sum(HerbPerc))%>%
-  ungroup()%>%
-  select(Plot,Year,Time.Point,Treatment,totaldam)
-
-Herb22$HerbPerc <- as.numeric(Herb22$HerbPerc)
-
-TP1Herb22<-read.csv("Mann_Leaf_Damage_Sandhill_Gamelands_2022.csv", na.strings = "")%>%
-  filter(Timepoint..1.2.3.=="1")
-
-TP1Herb22Stretch<- Herb22 %>%
-  filter(Timepoint)
-  select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
-  drop_na(Plot) %>%
-  group_by(Block, Plot, Treatment, Replicate, Species) %>%
-  gather(HerbType, HerbPerc,6:11)%>%
+Herb23<-read.csv("Mann_Leaf_Damage_2023.csv") %>%
+  mutate(Year="23") %>%
+  filter(Notes!="No plants") %>%
+  filter(Notes!="no plants") %>% #remove 43 rows- not true 0s must be removed - WILL check to see if i interpreted the notes correctly here
+  filter(Other.Fungi!="_") %>% # removed an additional 30 plants that were not true 0s
+  filter(Species!="Liatris_cokeri") %>%
+  #select(-Notes, -Date, -Damage.Assesser.s., -Scribe, -Timepoint..1.2.3.)%>%
+  group_by(Year, Block, Plot, Treatment, Replicate, Species) %>%
+  pivot_longer(cols= Chew:Other.Fungi, names_to = "HerbType", values_to="HerbPercent") %>%
   ungroup() %>%
-  drop_na(HerbPerc) %>%
-  mutate(Year="22-TP1") %>%
-  filter(HerbType==c("Chew","Mine.Suck"))%>%
-  filter(HerbPerc!="_")
+  mutate(HerbPercent=as.numeric(HerbPercent)) %>%
+  filter(HerbType==c("Chew", "Mine.Suck")) %>%
+  group_by(Year, Block, Plot, Treatment, Replicate, Species) %>%
+  summarize(totaldam=sum(HerbPercent))%>%
+  mutate(Timepoint=2)
+unique(Herb23$Species)
 
-TP1Herb22Stretch <- TP1Herb22Stretch %>%  
-  mutate(HerbPerc = as.numeric(HerbPerc))
+Converted<-read.csv("ConvertedTreat.csv")
 
-TP1HerbCon22<- TP1Herb22Stretch %>%
-  filter(Treatment==c("C", "NPK")) %>%
-  mutate(Year="TP1") %>%
-  mutate(Treatment_Year=paste(Treatment, Year, sep="_"))
-
-
-PeakHerb22<-read.csv("Mann_Leaf_Damage_Sandhill_Gamelands_2022.csv", na.strings = "") %>%
-  filter(Timepoint..1.2.3.=="2")%>%
-  mutate(Year="22-TP2")
-
-Peak22Stretch<- PeakHerb22 %>%
-  select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
-  drop_na(Plot) %>%
-  group_by(Block, Plot, Treatment, Replicate, Species) %>%
-  gather(HerbType, HerbPerc,6:11)%>%
-  ungroup() %>%
-  drop_na(HerbPerc) %>%
-  filter(HerbType==c("Chew","Mine.Suck")) %>%
-  select(-Timepoint..1.2.3.) %>%
-  filter(HerbPerc!="_")
-
-Peak22Stretch <- Peak22Stretch %>%  
-  mutate(HerbPerc = as.numeric(HerbPerc))
-
-TP3Herb22<-read.csv("Mann_Leaf_Damage_Sandhill_Gamelands_2022.csv", na.strings = "")%>%
-  filter(Timepoint..1.2.3.=="3")%>%
-  mutate(Year="22")
-
-TP3Herb22Stretch<- TP1Herb22 %>%
-  select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
-  drop_na(Plot) %>%
-  group_by(Block, Plot, Treatment, Replicate, Species) %>%
-  gather(HerbType, HerbPerc,6:11)%>%
-  ungroup() %>%
-  drop_na(HerbPerc) %>%
-  mutate(Year="22-TP3") %>%
-  filter(HerbType==c("Chew","Mine.Suck")) %>%
-  filter(HerbPerc!="_")
-
-TP3Herb22Stretch <- TP3Herb22Stretch %>%  
-  mutate(HerbPerc = as.numeric(HerbPerc))
-
-
-
-Herb23<-read.csv("Mann_Leaf_Damage_2023.csv", na.strings = "")%>%
-  mutate(Year="23")
-
-
-Herb23Stretch<- Herb23 %>%
-  select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
-  drop_na(Plot) %>%
-  group_by(Block, Plot, Treatment, Replicate, Species) %>%
-  gather(HerbType, HerbPerc,6:11)%>%
-  ungroup() %>%
-  drop_na(HerbPerc) %>%
-  filter(HerbType==c("Chew","Mine.Suck")) %>%
-  select(-Timepoint..1.2.3.) %>%
-  filter(HerbPerc!="_") %>%
-  mutate(Time.Point="2")
-
-Herb23Stretch <- Herb23Stretch %>%  
-  mutate(HerbPerc = as.numeric(HerbPerc))
-
-
-
-
-
-Stretch22<-full_join(Peak22Stretch, TP1Herb22Stretch)
-
-Stretchall22<-full_join(Stretch22, TP3Herb22Stretch)
-
-Stretch2223<-full_join(Stretchall22, Herb23Stretch)
-
-
-HerbComp22<-left_join(PeakHerb22, TP1Herb22)
-HerbComp22Stretch<- HerbComp22 %>%
-  select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
-  drop_na(Plot) %>%
-  group_by(Block, Plot, Treatment, Replicate, Species) %>%
-  gather(HerbType, HerbPerc,6:11)%>%
-  ungroup() %>%
-  drop_na(HerbPerc) %>%
-  mutate(Year="22") %>%
-  filter(HerbType==c("Chew","Mine.Suck"))
-
-
-Peak22H<- HerbComp22Stretch %>%
-  filter(Timepoint..1.2.3.=="2") %>%
-  select(-Timepoint..1.2.3.)
-
-
-HCon20_21<-full_join(HerbCon20, HerbCon21)
-HconComp<-full_join(HCon20_21, TP1HerbCon22) %>%
-  filter(HerbType==c("Chew","Mine.Suck"))
-
-HComp2020_21<- full_join(Herb20Stretch, Herb21Stretch)
-
-####Hcompall####
-
-
-HCompall<-full_join(HComp2020_21, StretchAll22) %>%
-  filter(HerbType==c("Chew","Mine.Suck")) %>%
-  group_by(Block, Plot, Treatment, Species, HerbType, Year) %>%
-  ungroup() %>%
-  filter(Species!="Chrysopsis_mariana")%>%
-  filter(Species!="Lespedeza_hirta") %>%
+DamAll<-full_join(Herb20, Herb21) %>%
+  full_join(Herb22) %>%
+  full_join(Herb23) %>%
+  full_join(Converted) %>%
+  filter(Species != "NA") %>%
+  group_by(Year, Timepoint, Block, Plot, Species, Treatment,
+           Nitrogen, Phosphorous, Potassium, Drought) %>% #dropping Pseudo replicates
+  summarise(totaldam = if(all(is.na(totaldam))) NA_real_ else mean(totaldam, na.rm = TRUE)) %>%
+  filter(Species!="Chrysopsis_mariana") %>% #filterout unsed species that are not consistent across yrs
   filter(Species!="Dichanthelium_commutatum") %>%
-  mutate(Treatment_Year=paste(Treatment, Year, sep="_"))
-
-
-
-HCompallYears<-full_join(HComp2020_21, Stretch2223) %>%
-  filter(HerbType==c("Chew","Mine.Suck")) %>%
-  group_by(Block, Plot, Treatment, Species, HerbType, Year) %>%
-  ungroup() %>%
-  filter(Species!="Chrysopsis_mariana")%>%
   filter(Species!="Lespedeza_hirta") %>%
-  filter(Species!="Dichanthelium_commutatum") %>%
-  mutate(Treatment_Year=paste(Treatment, Year, sep="_"))
-
-PCall<-left_join(Herb21Stretch, Peak22H)
-
-
-filter(HerbType==c("Chew","Mine.Suck")) %>%
-  group_by(Block, Plot, Treatment, Species, HerbType, Year) %>%
-  ungroup() %>%
-  filter(Species!="Chrysopsis_mariana")%>%
-  filter(Species!="Lespedeza_hirta") %>%
-  filter(Species!="Liatris_cokeri")%>%
-  filter(Species!="Dichanthelium_commutatum") %>%
-  mutate(Treatment_Year=paste(Treatment, Year, sep="_"))
-
-
-
-
-HCom2<-full_join(HComp2020_21, TP1Herb22Stretch) %>%
-  drop_na(HerbPerc) %>%
-  group_by(Block, Plot, Treatment, Species, HerbType, Year) %>%
-  summarise(avgherb=mean(HerbPerc)) %>%
-  ungroup() %>%
-  filter(Species!="Chrysopsis_mariana")%>%
-  filter(Species!="Lespedeza_hirta") %>%
-  filter(Species!="Liatris_cokeri")%>%
-  filter(Species!="Dichanthelium_commutatum") %>%
-  mutate(Treatment_Year=paste(Treatment, Year, sep="_"))
-
-
-####HerbDam####
-
-HerbDamSpec<-HCompall %>%
-  summarise(Block, Plot, Year, Treatment, HerbPerc, Species, Time.Point)%>%
-  group_by(Block, Plot, Year, Treatment, Species, Time.Point) %>%
-  filter(HerbPerc!="_")%>%
-  summarize(totaldam= sum(HerbPerc))%>%
-  ungroup() %>%
-  mutate(trans=log1p(totaldam)) %>%
   filter(Species!="Liatris_cokeri")
-select(Plot, Species,Year, Treatment,totaldam)
-
-HCompall$HerbPerc <- as.numeric(HCompall$HerbPerc)
-
-HerbDamyears<-HCompallYears %>%
-  # summarise(Plot, Species, Treatment_Year, HerbType, avgherb, Year, Treatment) %>%
-  group_by(Block, Plot, Species, Year, Treatment, Treatment_Year) %>%
-  summarize(totaldam= sum(HerbPerc))%>%
-  ungroup() %>%
-  select(Block, Plot, Species,Year, Treatment,totaldam)
 
 
-#### Herbivory by Year Graphs ####
+#WILL - DamAll is now your full complete herbivore damage by insects dataset
+hist(DamAll$totaldam)
+shapiro.test(DamAll$totaldam) # Data is NOT normal
+
+DamAll<-DamAll %>%
+  mutate(trans=log1p(totaldam)) ###log(x+1) Box-cox
+hist(DamAll$trans) #better, still not great, but I think good enough
+shapiro.test(DamAll$trans) # Data is NOT normal
+
+
+####Do all analyses on (1) transformed data, (2) just the four core species that are in every single year, (3) averaged across pseudoreplicates within a plot
+DamAllSave<-DamAll
+####Main Analysis -- drop timepoint 1 and 3, and drop D ####
+unique(DamAll$Species)
+DamAll_Nuttrans<- DamAll %>%
+  filter(Drought!="D") %>%
+  filter(Timepoint==2)
+#select(-Timepoint,-Drought)
+
+unique(DamAll_Nuttrans$Species)
+#Make year a factor in the data not the model
+unique(DamAll_Nuttrans$Species)
+
+Nuttrans<-lmerTest::lmer(data=DamAll_Nuttrans,
+                         trans~Year*Species*Nitrogen*Phosphorous*Potassium+ (1|Block)+ (1|Plot:Year))
+#check this with and with out the plot factor being in there
+Nuttrans
+Anova(Nuttrans, type=3)
+
+Nuttrans2<-lmerTest::lmer(data=DamAll_Reg22,
+                          trans~Year*Species*Nitrogen*Phosphorous*Potassium+ (1|Block)+ (1|Plot:Year))
+#check this with and with out the plot factor being in there
+Nuttrans2
+anova(Nuttrans2, type=3)
+Anova(Nuttrans, type = 3)
+###With Plot- Marginal Year*all significance,Significant Year*Species and Nitrogen, Very signif. Species and Year
+###Without Plot- Same
+
+model <- lm(trans ~ Species*Nitrogen*Phosphorous*Potassium, data = DamAll_Nuttrans)
+summary(model)
+
+
+
+
+
+library(performance)
 library(emmeans)
-HerbDamYear1<-HerbDamSpec %>%
-  mutate(Year=paste("20",Year, sep="")) %>%
-  rename(year=Year)%>%
-  rename(block=Block)
-HerbDamYear1$year<-as.integer(HerbDamYear1$year)
+##Nuttrans##
+emmeans(Nuttrans, pairwise ~ Nitrogen, adjust="holm")
+### N is definitively herbivorized less than Control in all years
 
-HerbDamYear<-left_join(HerbDamYear1, Metrics, by=c("Plot", "year", "block"))
+emmeans(Nuttrans, pairwise ~ Species, adjust="holm")
+### Across all years, Aristida and Pteridium are different from all other species
+### Pityopsis and Vaccinium are different from both Aristida and Pteridium, but not from each other
 
-HerbDamYearNoDrought<-HerbDamYear%>%
-  filter(drought=="C")%>%
-  select(-drought)%>%
-  filter(Time.Point=="2")
+emmeans(Nuttrans, pairwise ~ Nitrogen*Phosphorous*Potassium|Species)
+### 2020-Aristida different from all, but other species the same
+### 2021-Aristida different from Pityopsis and Pteridium, not Vaccinium. Pteridium different than Vaccinium and Aristida
+### 2022-Aristida is different than Pteridium
+### 2023-Marginal difference between Aristida and Pteridium
 
-HYearsNoDrought<-ggplot(DamAll_Nuttrans, aes(x=Year, y=totaldam, color=Species))+geom_point()
-HYearsNoDrought<-HYearsNoDrought+geom_smooth(method = "lm", col="black")
-HYearsNoDrought
+emmeans(Nuttrans, pairwise ~ Nitrogen|Year)
+### 2020 is different in Control vs Nitrogen. Nitrogen herbivorized less
+### Other years are the same in Control vs Nitrogen. In 2023, they may have started to diverge again
 
-z <- ggplot(DamAll_Nuttrans, aes(Treatment,totaldam)) + geom_col()
-z + facet_grid(Species~Year) +labs(y = "Arthropod Herbivore Damage by Year")
+emmeans(Nuttrans2, pairwise ~ Species|Phosphorous)
+
+emmeans(Nuttrans2, pairwise ~ Species|Nitrogen)
+
+emmeans(Nuttrans2, pairwise ~ Species|Potassium)
+
+emmeans(Nuttrans, pairwise ~ Treatment|Year)
 
 
-SpxHerb<-DamAll_Nuttrans %>%
-  group_by(Species) %>%
-  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
-spherb <- ggplot(SpxHerb, aes(Species,AverageHerbivory)) + geom_col() + geom_errorbar(aes(x=Species, ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+labs(y = "Herbivore Damage (%)")
-spherb +theme_classic()+theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+emmeans(Nuttrans, pairwise ~ Nitrogen|Year)
 
-y <- ggplot(DamAll_Nuttrans, aes(Species,totaldam)) + geom_col()
-y + theme_classic()
 
-YrXSp<-DamAll_Nuttrans %>%
+
+##OK for this analysis, we should put these anova results in a table AND then show a graph of SpeciesxYear (Year on x-axis, totaldam on y and different color lines with the species) AND then show N
+#for species x yr graph
+stderror <- function(x) sd(x)/sqrt(length(x))
+MeansYrXSp<-DamAll_Nuttrans %>%
   group_by(Year, Species) %>%
   summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
 
 cols <- c("#EEA236", "#5CB85C", "#46B8DA", "#9632B8")
 
-YearrXSp<-ggplot(YrXSp, aes(x = as.numeric(Year), y = AverageHerbivory, color = Species)) +
+YrXSp<-ggplot(MeansYrXSp, aes(x = as.numeric(Year), y = AverageHerbivory, color = Species)) +
   geom_point() +
   geom_line() +
   geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
   scale_color_manual(values = cols)+
   theme_classic()+
   theme(legend.position = c(0.2, 0.8))
-YearrXSp
-#Saved#
+YrXSp
+###Saved
 
-NXSp<-DamAll_Nuttrans %>%
-  group_by(Nitrogen, Species) %>%
-  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
+### for nitrogen
+MeansN<-DamAll_Nuttrans %>%
+  group_by(Nitrogen) %>%
+  summarise(mean=mean(totaldam), se=stderror(totaldam))
 
-cols <- c("#EEA236", "#5CB85C", "#46B8DA", "#9632B8")
-
-NsXSp<-ggplot(NXSp, aes(x = Nitrogen, y = AverageHerbivory, color = Species)) +
-  geom_point() +
-  geom_line() +
-  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
-  scale_color_manual(values = cols)+
-  theme_classic()+
-  theme(legend.position = "none")
-NsXSp
-#Saved#
-
-PXSp<-DamAll_Nuttrans %>%
-  group_by(Phosphorous, Species) %>%
-  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
-
-cols <- c("#EEA236", "#5CB85C", "#46B8DA", "#9632B8")
-
-PsXSp<-ggplot(PXSp, aes(x = Phosphorous, y = AverageHerbivory, color = Species)) +
-  geom_point() +
-  geom_line() +
-  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
-  scale_color_manual(values = cols)+
-  theme_classic()+
-  theme(legend.position = "none")
-PsXSp
-#Saved#
-
-KXSp<-DamAll_Nuttrans %>%
-  group_by(Potassium, Species) %>%
-  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
-
-KXSp2<-DamAll_Nuttrans %>%
-  group_by(Potassium, Species) %>%
-  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam), HerbivoreDamage=(totaldam))
-
-cols <- c("#EEA236", "#5CB85C", "#46B8DA", "#9632B8")
-
-KsXSp<-ggplot(KXSp, aes(x = Potassium, y = AverageHerbivory, color = Species)) +
-  geom_point() +
-  geom_line() +
-  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
-  scale_color_manual(values = cols)+
+N <- ggplot(MeansN, aes(x=Nitrogen, y=mean)) +
+  geom_bar(stat="identity", position=position_dodge(), fill=c("#46B8DA", "#9632B8")) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.2)+
   theme_classic()
-KsXSp
-#Saved#
-
-KsXSp2<-ggplot(KXSp, aes(x = Species, y = AverageHerbivory, color = Potassium)) +
-  geom_boxplot()+
-  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
-  theme_classic()
-
-KbySp<-ggplot(data=KXSp2, aes(x=Species, y=HerbivoreDamage,fill=Potassium)) +
-  geom_boxplot()+ labs(y="Herbivore Damage (%)") + theme_classic() + theme(axis.title.y = element_blank(), axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))+ scale_fill_discrete(name="Nutrient Treatment", breaks=c("C", "K"),labels=c("Control", "Treatment")) 
-KbySp
-
-NXSp2<-DamAll_Nuttrans %>%
-  group_by(Nitrogen, Species) %>%
-  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam), HerbivoreDamage=(totaldam))
-
-NbySp<-ggplot(data=NXSp2, aes(x=Species, y=HerbivoreDamage,fill=Nitrogen)) +
-  geom_boxplot()+ labs(y="Herbivore Damage (%)") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
-NbySp
-
-PXSp2<-DamAll_Nuttrans %>%
-  group_by(Phosphorous, Species) %>%
-  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam), HerbivoreDamage=(totaldam))
-
-PbySp<-ggplot(data=PXSp2, aes(x=Species, y=HerbivoreDamage, fill=Phosphorous)) +
-  geom_boxplot()+ labs(y="Herbivore Damage by Species")+ theme_classic() +theme(legend.position = "none") + theme(axis.title.y = element_blank(), axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
-PbySp
-
-NbySp+PbySp+KbySp
+N
+###Saved
 
 
+###For just looking at drought effects
+DamAll_Drought<- DamAll %>%
+  filter(Treatment %in% c("C", "NPK", "CTRL+Shelter", "NPK+, Shelter")) %>%
+  filter(Year%in% c("22")) %>% # because this is the only year that drought shelters were sampled right?
+  mutate(Timepoint=as.factor(Timepoint))
+Droughttrans<-lmerTest::lmer(data=DamAll_Drought,
+                             trans~Timepoint*Species*Drought*Nitrogen+ (1|Block))
+Droughttrans
+anova(Droughttrans, type=3)
+Anova(Droughttrans, type = 3)
 
-
-model<- lm(trans ~ Species*Potassium, data = DamAll_Nuttrans)
+model <- lm(trans ~ Timepoint*Species*Drought*Nitrogen, data = DamAll_Drought)
 summary(model)
 
-
-
-NsXSp+PsXSp+KsXSp+ theme_classic()
-#saved#
-
-
-
-NPK<-DamAll_Nuttrans %>%
-  group_by(Treatment, Species) %>%
-  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
-
-NPK2<-DamAll_Nuttrans %>%
-  group_by(Treatment, Species) %>%
-  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam), HerbivoreDamage=(totaldam))
-
-cols <- c("#EEA236", "#5CB85C", "#46B8DA", "#9632B8")
-
-
-Aris<-NPK%>%
-  filter(Species=="Aristida_stricta")
-Ar <- ggplot(Aris, aes(Treatment,AverageHerbivory)) + 
-  geom_point()+
-  geom_line()+
-  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
-  scale_color_manual(values = cols)+
-  theme_classic() +
-  theme(legend.position = "none")+
-  labs(y = "Arthropod Herbivore Damage on Aristida_stricta")
-Ar
-Aris2<-NPK2%>%
-  filter(Species=="Aristida_stricta")
-Ar2 <-ggplot(data=Aris2, aes(x=factor(Treatment, level= level_order), y=HerbivoreDamage,fill=Treatment)) +
-  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage(%)") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
-Ar2
-
-
-
-
-Pter<-NPK%>%
-  filter(Species=="Pteridium_aquilinum")
-Pt <- ggplot(Pter, aes(Treatment,AverageHerbivory)) + 
-  geom_point()+
-  geom_line()+
-  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
-  scale_color_manual(values = cols)+
-  theme_classic()+
-  theme(legend.position = "none")+
-  labs(y = "Arthropod Herbivore Damage on Pteridium_aquilinum")
-Pt
-Pter2<-NPK2%>%
-  filter(Species=="Pteridium_aquilinum")
-Pt2 <-ggplot(data=Pter2, aes(x=factor(Treatment, level= level_order), y=HerbivoreDamage,fill=Treatment)) +
-  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage(%)") + theme_classic()+theme(legend.position = "none") + theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
-Pt2
-
-
-Pity<-NPK%>%
-  filter(Species=="Pityopsis_aspera")
-Pi <- ggplot(Pity, aes(Treatment,AverageHerbivory)) + 
-  geom_point()+
-  geom_line()+
-  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
-  scale_color_manual(values = cols)+
-  theme_classic()+
-  theme(legend.position = "none")+
-  labs(y = "Arthropod Herbivore Damage on Pityopsis_aspera")
-Pi
-Pity2<-NPK2%>%
-  filter(Species=="Pityopsis_aspera")
-Pi2 <-ggplot(data=Pity2, aes(x=factor(Treatment, level= level_order), y=HerbivoreDamage,fill=Treatment)) +
-  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage(%)") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
-Pi2
-
-
-Vacc<-NPK%>%
-  filter(Species=="Vaccinium_tenellum")
-Va <- ggplot(Vacc, aes(Treatment,AverageHerbivory)) + 
-  geom_point()+
-  geom_line()+
-  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
-  scale_color_manual(values = cols)+
-  theme_classic()+
-  theme(legend.position = "none")+
-  labs(y = "Arthropod Herbivore Damage on Vaccinium_tenellum")
-Va
-Vacc2<-NPK2%>%
-  filter(Species=="Vaccinium_tenellum")
-Va2 <-ggplot(data=Aris2, aes(x=factor(Treatment, level= level_order), y=HerbivoreDamage,fill=Treatment)) +
-  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage(%)") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
-Va2
-
-level_order <- c('C', 'K', 'P', 'N', 'PK', 'NK', 'NP', 'NPK') 
-Ar+Pt+Pi+Va
-Ar2+Pt2+Pi2+Va2
-
-Yeartrans<-lmerTest::lmer(data=DamAll_Nuttrans,
-                          trans~Year*Species*Nitrogen*Phosphorous*Potassium+ (1|Block)+ (1|Plot:Year))
-#check this with and with out the plot factor being in there
-Yeartrans
-Anova(Yeartrans, type=3)
 
 library(emmeans)
-emmeans(Yeartrans, pairwise ~ Nitrogen*Phosphorous*Potassium|Species)
 
-####Herbivory by Drought and Year####
-HerbDamYear
+### Marginal Timepoint*All and Species, Significant Species*D*N, Very Significant Timepoint and Timepoint*Species
+emmeans(Droughttrans, pairwise ~ Drought*Nitrogen, adjust="holm")
 
-Drought<-DamAll_Drought %>%
-  group_by(Treatment, Species,Timepoint, Year) %>%
-  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam)) %>%
-  mutate(Seasonality = ifelse(as.character(Timepoint) %in% '1', "Early", 
-                              ifelse(as.character(Timepoint) %in% '2', "Middle", "Late")))
-Drought$Seasonality_f = factor(Drought$Seasonality, levels=c('Early','Middle','Late'))
-NoSpDrought<-DamAll_Drought %>%
-  group_by(Treatment,Year) %>%
-  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
-PureDrought<-DamAll_Drought %>%
-  group_by(Drought, Species,Timepoint, Year) %>%
-  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam)) %>%
-  mutate(Seasonality = ifelse(as.character(Timepoint) %in% '1', "Early", 
-                              ifelse(as.character(Timepoint) %in% '2', "Middle", "Late")))
-PureDrought$Seasonality_f = factor(PureDrought$Seasonality, levels=c('Early','Middle','Late'))
-q <- ggplot(Drought, aes(Treatment,AverageHerbivory)) + geom_col()
-q + facet_grid(Species~Year) +labs(y = "Arthropod Herbivore Damage by Year")
-#Saved#
-q
+emmeans(Droughttrans, pairwise ~ Drought|Timepoint*Species, adjust="holm")
+### Aristida- No difference
+### Pityopsis- Marginal Pure Control vs D*N, Significant Pure Drought vs Drought*N; D*N low Herbivory vs Pure Control and Drought Control
+### Pteridium- No difference
+### Vaccinium- No difference
 
-nsd <- ggplot(NoSpDrought, aes(Treatment,AverageHerbivory)) + geom_col() + geom_errorbar(aes(x=Treatment, ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)
-nsd +labs(y = "Herbivore Damage (%)") + theme_classic() +theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 
+#For just looking at seasonal effects
+DamAll_Seasonal<- DamAll %>%
+  filter(Year==22)%>%
+  filter(Drought!="D") %>%
+  mutate(Timepoint=as.factor(Timepoint))
 
 
-d <- ggplot(Drought, aes(Treatment,AverageHerbivory)) + geom_col() + geom_errorbar(aes(x=Treatment, ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)
-d + facet_grid(Species~Seasonality_f) +labs(y = "Herbivore Damage (%)") +theme_classic()+theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold")) 
-#Saved#
+Season<-lmerTest::lmer(data=DamAll_Seasonal,
+                       trans~as.factor(Timepoint)*Species*Nitrogen*Phosphorous*Potassium+ (1|Block))
+Season
+anova(Season, type=3)
+Anova(Season, type = 3)
+### Significant N*P and Potassium, Very Significant Timepoint*Species, Species, Timepoint and Timepoint*All
 
-pd <- ggplot(PureDrought, aes(Drought,AverageHerbivory)) + geom_col() + geom_errorbar(aes(x=Drought, ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)
-pd + facet_grid(Species~Seasonality_f) +labs(y = "Herbivore Damage (%)") +theme_classic()+theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
-
-
-HerbSpecNut22
-SpxHerbxTP<-DamAll_Drought %>%
-  group_by(Timepoint, Species) %>%
-  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
-
-cols <- c("#EEA236", "#5CB85C", "#46B8DA", "#9632B8")
-
-SpxHerbxTPxDrt<-ggplot(SpxHerbxTP, aes(x = as.numeric(Timepoint), y = AverageHerbivory, color = Species)) +
-  geom_point() +
-  geom_line() +
-  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
-  scale_color_manual(values = cols)+
-  theme_classic()+
-  theme(legend.position = c(0.3, 0.8)) +
-  labs(x="Season", y = "Herbivore Damage (%)")+
-  scale_fill_discrete(name="Species - Drought-Net Plots")
-SpxHerbxTPxDrt+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
-
-
-
-#Saved#
-
-Drttrans<-lmerTest::lmer(data=HerbDamYear,
-                         trans~year*Species*drought*N+ (1|block)+ (1|Plot:year))
-Drttrans
-Anova(Drttrans, type=3)
-
-
-#### Herbivory and Species by Year Graphs ####
-SpecHerbbyYear<-ggplot(data=DamAll_Nuttrans, aes(x=Species, y=totaldam, fill=Treatment)) +
-  geom_boxplot() + geom_signif(comparisons = list(c("C","NP")), map_signif_level = TRUE, annotations = c("***")) + labs(y="Herbivore Damage by Species")
-SpecHerbbyYear
-
-PlantNut<-PlantNut22%>%
-  select(Plot, N, P, K)
-HerbSpecNut<-left_join(PlantNut, HerbDamSpec, by="Plot")
-HerbSpecNut20<-HerbSpecNut%>%
-  filter(Year=="20")
-HerbSpecNut21<-HerbSpecNut%>%
-  filter(Year=="21")
-HerbSpecNut22<-HerbSpecNut%>%
-  filter(Year=="22")
-HerbSpecNut22_1<-HerbSpecNut%>%
-  filter(Year=="22") %>%
-  filter(Time.Point=="1")
-HerbSpecNut22_2<-HerbSpecNut%>%
-  filter(Year=="22") %>%
-  filter(Time.Point=="2")
-HerbSpecNut22_3<-HerbSpecNut%>%
-  filter(Year=="22") %>%
-  filter(Time.Point=="3")
-HerbSpecNut23<-HerbSpecNut%>%
-  filter(Year=="23")
-my_comparisons <- list( c("C", "K"), c("C", "N"), c("C", "P"), c("C", "NP"), c("C", "PK"), c("C", "NK"), c("C", "NPK")   )
-
-
-YearAnalysis2<-ggboxplot(HerbSpecNut23, x="Treatment", y="totaldam", fill = "Treatment", facet.by = "Species", short.panel.labs = FALSE) + theme(legend.position = "right")
-YearAnalysis2#+stat_compare_means(comparisons = my_comparisons, hide.ns = TRUE)
-
-
-YearAnalysis2.1<-ggboxplot(HerbSpecNut22, x="Species", y="totaldam", fill = "Treatment", short.panel.labs = FALSE) + theme(legend.position = "right")
-YearAnalysis2.1+stat_compare_means(aes(group=Treatment),label = "p.format")
-
-
-
-
-ggplot(HerbSpecNut22, aes(x=Treatment, y=totaldam, fill=Treatment) +geom_bar())
-
-#### Seasonal Arthropod Data by Treatment####
-
-SpxHerbxTPxTrt <- DamAll_Seasonal %>%
-  group_by(Treatment, Species, Timepoint, Year) %>%
-  summarise(AverageHerbivory = mean(totaldam), se = stderror(totaldam))%>%
-  mutate(Seasonality = ifelse(as.character(Timepoint) %in% '1', "Early", 
-                              ifelse(as.character(Timepoint) %in% '2', "Middle", "Late")))
-SpxHerbxTPxTrt$Seasonality_f = factor(SpxHerbxTPxTrt$Seasonality, levels=c('Early','Middle','Late'))
-
-p <- ggplot(SpxHerbxTPxTrt, aes(x=factor(Treatment, level= level_order),AverageHerbivory)) + geom_col()+ geom_errorbar(aes(x=Treatment, ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
-p + facet_grid(Species~Seasonality_f) +labs(x="Treatment", y = "Arthropod Herbivore Damage") +labs(x="Treatment",y = "Arthropod Herbivore Damage")
-#Saved#
-
-
-NPK_Season<-DamAll_Seasonal %>%
-  group_by(Treatment, Species) %>%
-  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
-PK_Season<-NPK_Season%>%
-  filter(Treatment!="K")%>%
-  filter(Treatment!="NK")%>%
-  filter(Treatment!="PK")%>%
-  filter(Treatment!="NPK")
-Vacc_S<-PK_Season%>%
-  filter(Species=="Vaccinium_tenellum")
-Aris_S<-PK_Season%>%
-  filter(Species=="Aristida_stricta")
-Pter_S<-PK_Season%>%
-  filter(Species=="Pteridium_aquilinum")
-Pity_S<-PK_Season%>%
-  filter(Species=="Pityopsis_aspera")
-level_order2 <- c('C', 'P', 'N', 'NP')
-
-NPK_Season2<-DamAll_Seasonal %>%
-  group_by(Treatment, Species) %>%
-  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam), HerbivoreDamage=(totaldam))
-PK_Season2<-NPK_Season2%>%
-  filter(Treatment!="K")%>%
-  filter(Treatment!="NK")%>%
-  filter(Treatment!="PK")%>%
-  filter(Treatment!="NPK")
-
-Vacc_S2<-PK_Season2%>%
-  filter(Species=="Vaccinium_tenellum")
-VaS2 <-ggplot(data=Vacc_S2, aes(x=factor(Treatment, level= level_order2), y=HerbivoreDamage,fill=Treatment)) +
-  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage (%)") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
-VaS2
-
-Va_S <- ggplot(Vacc_S, aes(Treatment,AverageHerbivory)) + 
-  geom_point()+
-  geom_line()+
-  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
-  scale_color_manual(values = cols)+
-  theme_classic()+
-  theme(legend.position = "none")+
-  labs(y = "Arthropod Herbivore Damage on Vaccinium_tenellum")
-Va_S
-
-Ar_S <- ggplot(Aris_S, aes(Treatment,AverageHerbivory)) + 
-  geom_point()+
-  geom_line()+
-  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
-  scale_color_manual(values = cols)+
-  theme_classic()+
-  theme(legend.position = "none")+
-  labs(y = "Arthropod Herbivore Damage on Aristida_stricta")
-Ar_S
-Aris_S2<-PK_Season2%>%
-  filter(Species=="Aristida_stricta")
-ArS2 <-ggplot(data=Aris_S2, aes(x=factor(Treatment, level= level_order2), y=HerbivoreDamage,fill=Treatment)) +
-  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage (%)") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
-ArS2
-
-
-
-Pt_S <- ggplot(Pter_S, aes(Treatment,AverageHerbivory)) + 
-  geom_point()+
-  geom_line()+
-  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
-  scale_color_manual(values = cols)+
-  theme_classic()+
-  theme(legend.position = "none")+
-  labs(y = "Arthropod Herbivore Damage on Pteridium aquilinum")
-Pt_S
-Pter_S2<-PK_Season2%>%
-  filter(Species=="Pteridium_aquilinum")
-PtS2 <-ggplot(data=Pter_S2, aes(x=factor(Treatment, level= level_order2), y=HerbivoreDamage,fill=Treatment)) +
-  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage (%)") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
-PtS2
-
-
-
-Pi_S <- ggplot(Pity_S, aes(Treatment,AverageHerbivory)) + 
-  geom_point()+
-  geom_line()+
-  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
-  scale_color_manual(values = cols)+
-  theme_classic()+
-  theme(legend.position = "none")+
-  labs(y = "Arthropod Herbivore Damage on Pityopsis aspera")
-Pi_S
-Pity_S2<-PK_Season2%>%
-  filter(Species=="Pityopsis_aspera")
-PiS2 <-ggplot(data=Pity_S2, aes(x=factor(Treatment, level= level_order2), y=HerbivoreDamage,fill=Treatment)) +
-  geom_boxplot()+ labs(x="Treatment",y="Herbivore Damage (%)") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
-PiS2
-
-
-
-Ar_S+Pt_S+Va_S+Pi_S
-ArS2+PtS2+VaS2+PiS2
-
-TPXSp<-DamAll_Seasonal%>%
-  group_by(Timepoint, Species) %>%
-  summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
-
-cols <- c("#EEA236", "#5CB85C", "#46B8DA", "#9632B8")
-
-TPGXSp<-ggplot(TPXSp, aes(x = as.numeric(Timepoint), y = AverageHerbivory, color = Species)) +
-  geom_point() +
-  geom_line() +
-  geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
-  scale_color_manual(values = cols)+
-  theme_classic()+
-  theme(legend.position = c(0.2, 0.8))
-TPGXSp
-#Saved#
-
-HerbDamYear22<-HerbDamYear%>%
-  filter(drought=="C")%>%
-  select(-drought)%>%
-  filter(year=="2022")
-
-
-Timetrans<-lmerTest::lmer(data=HerbDamYear22,
-                          trans~Time.Point*Species*N*P*K+ (1|block)+ (1|Plot:Time.Point))
-#check this with and with out the plot factor being in there
-Timetrans
-Anova(Timetrans, type=3)
-
-
-
-
-#### Dr. K regressions from March 29th, 2024 ####
-
-library(multcomp)
-library(lme4)
-library(lmerTest)
-library(tidyverse)
-
-DamJuly2022<-read.csv("AllDamRegs_29March2024.csv") %>%
-  filter(Year==22) %>% 
-  filter(Timepoint==2)
-
-#### Leaf Nutrient Figure and statistics
-LeafNuts <- DamJuly2022 %>% 
-  select(Block, Plot, Species, totaldam, trans, Nperc, Kperc, Pperc)
-
-
-modelNperc <- lm(trans ~ Nperc, data = LeafNuts)
-summary(modelNperc)
-NpercGraph<-ggplot(data = LeafNuts, aes(x = Nperc, y = trans)) +
-  geom_point(colour = "dark grey") +
-  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
-  labs(x = "Leaf Tissue % N",
-       y = "Herbivore Damage (log(%))")+
-  theme_classic()
-NpercGraph
-
-modelPperc <- lm(trans ~ Pperc, data = LeafNuts)
-summary(modelPperc)
-PpercGraph<-ggplot(data = LeafNuts, aes(x = Pperc, y = trans)) +
-  geom_point(colour = "dark grey") +
-  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
-  labs(x = "Leaf Tissue % P",
-       y = "Herbivore Damage (log(%))")+
-  theme_classic()
-PpercGraph
-
-modelKperc <- lm(trans ~ Kperc, data = LeafNuts)
-summary(modelKperc)
-KpercGraph<-ggplot(data = LeafNuts, aes(x = Kperc, y = trans)) +
-  geom_point(colour = "dark grey") +
-  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
-  labs(x = "Leaf Tissue % K",
-       y = "Herbivore Damage (log(%))")+
-  theme_classic()
-KpercGraph
-
-NpercGraph+PpercGraph+KpercGraph
-
-modelgramcov <- lm(trans ~ Maxgraminoidcov, data = DamAll_Reg22)
-summary(modelgramcov)
-gramcovGraph<-ggplot(data = DamAll_Reg22, aes(x = Maxgraminoidcov, y = trans)) +
-  geom_point(colour = "dark grey") +
-  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
-  labs(x = "Grass Cover",
-       y = "Herbivore Damage (log(%))")+
-  theme_classic()
-gramcovGraph
-
-modelforbcov <- lm(trans ~ Maxforbcov, data = DamAll_Reg22)
-summary(modelforbcov)
-forbcovGraph<-ggplot(data = DamAll_Reg22, aes(x = Maxforbcov, y = trans)) +
-  geom_point(colour = "dark grey") +
-  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
-  labs(x = "Forb Cover",
-       y = "Herbivore Damage (log(%))")+
-  theme_classic()
-forbcovGraph
-
-
-modelgrambio <- lm(trans ~ graminoidbiomass, data = DamAll_Reg22)
-summary(modelgrambio)
-grambioGraph<-ggplot(data = DamAll_Reg22, aes(x = graminoidbiomass, y = trans)) +
-  geom_point(colour = "dark grey") +
-  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
-  labs(x = "Graminoid Biomass",
-       y = "Herbivore Damage (log(%))")+
-  theme_classic()
-grambioGraph
-
-
-modellegbio <- lm(trans ~ legumebiomass, data = DamAll_Reg22)
-summary(modellegbio)
-legbioGraph<-ggplot(data = DamAll_Reg22, aes(x = legumebiomass, y = trans)) +
-  geom_point(colour = "dark grey") +
-  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
-  labs(x = "Legume Biomass",
-       y = "Herbivore Damage (log(%))")+
-  theme_classic()
-legbioGraph
-
-
-modellitbio <- lm(trans ~ litterbiomass, data = DamAll_Reg22)
-summary(modellitbio)
-litbioGraph<-ggplot(data = DamAll_Reg22, aes(x = litterbiomass, y = trans)) +
-  geom_point(colour = "dark grey") +
-  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
-  labs(x = "Litter Biomass",
-       y = "Herbivore Damage (log(%))")+
-  theme_classic()
-litbioGraph
-
-
-modelshann <- lm(trans ~ MaxShannon, data = DamAll_Reg22)
-summary(modelshann)
-shannGraph<-ggplot(data = DamAll_Reg22, aes(x = MaxShannon, y = trans)) +
-  geom_point(colour = "dark grey") +
-  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
-  labs(x = "Shannon Diversity",
-       y = "Herbivore Damage (log(%))")+
-  theme_classic()
-shannGraph
-
-
-
-modelrich <- lm(trans ~ MaxRichness, data = DamAll_Reg22)
-summary(modelrich)
-richGraph<-ggplot(data = DamAll_Reg22, aes(x = MaxRichness, y = trans)) +
-  geom_point(colour = "dark grey") +
-  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
-  labs(x = "Plant Species Richness",
-       y = "Herbivore Damage (log(%))")+
-  theme_classic()
-richGraph
-
-
-model<- lm(trans ~ K*Species, data = DamAll_Reg22)
+model <- lm(trans ~ Timepoint*Species*Nitrogen*Phosphorous*Potassium, data = DamAll_Seasonal)
 summary(model)
 
 
 
-#### Plant Community Figure and statistics
+
+emmeans(Season, pairwise ~ Potassium, adjust="holm")
+### Potassium herbivorized less than Control, supports selective feeding hypothesis
+
+emmeans(Season, pairwise ~ Nitrogen*Phosphorous*Potassium|Species*Timepoint, adjust="holm")
+### All different except Pityopsis-Pteridium and Pteridium-Vaccinium in TP1; Aristida herbivorized more
+### Aristida-Pteridium, Pityopsis-Pteridium, and Pteridium-Vaccinium are different in TP2; Pteridium herbivorized more
+### Aristida is different from everything and Pityopsis is different from Pteridium in TP3; Aristida herbivorized less, Pityopsis herbivorized less than Pteridium
+
+emmeans(Season, pairwise ~ Nitrogen*Phosphorous|Species, adjust="holm")
+### Only NC-NP are marginally different. NP is herbivorized the most, NC is herbivorized the least
+
+emmeans(Season, pairwise ~ Nitrogen*Phosphorous*Potassium|Species, adjust="holm")
+### CCC-CPK in Pityopsis is the only significance; CPK is herbivorized less
+
+#ok here show the full interaction graph where each species is its on panel in a graph.
+
+Means<-DamAll_Seasonal %>%
+  group_by(Timepoint, Species, Treatment) %>%
+  summarise(mean=mean(totaldam), se=stderror(totaldam))
+
+Season<-ggplot(Means, aes(x = as.numeric(Timepoint), y = mean, color = Treatment)) +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.2)+
+  theme_classic()+
+  theme(legend.position = c(0.2, 0.8))+
+  facet_wrap(~Species)
+Season
+#not sure this graph is really informative?
 
 
-#### Insect Community Figure and statistics
 
 
-modelNperc <- lm(trans ~ Nperc, data = BugMetrics22)
-summary(modelNperc)
-NpercGraph<-ggplot(data = LeafNuts, aes(x = Nperc, y = trans)) +
+
+##### What if we just look at damage reguardless of species ####
+HerbDam<-DamAll %>%
+  group_by(Year, Timepoint, Block, Plot, Treatment,
+           Nitrogen, Phosphorous, Potassium, Drought) %>% #Mean across pseudo-reps and species
+  summarise(totaldam = mean(totaldam))
+
+hist(HerbDam$totaldam)
+shapiro.test(HerbDam$totaldam)# Data is normal!!!
+####No? I have questions about this. More normal? Yes. Normal? No. p-value is still mich smaller than 0.05####
+####Herbdam transformation code HERE ####
+HerbDam<-HerbDam %>%
+  mutate(trans=log1p(totaldam))
+
+hist(HerbDam$trans)
+shapiro.test(HerbDam$trans)
+
+####Main Analysis -- drop timepoint 1 and 3, and drop D
+DamAll_Nuttrans<- HerbDam %>%
+  filter(Timepoint==2) %>%
+  select(-Timepoint) %>%
+  filter(Drought!="D") %>%
+  select(-Drought)
+
+#Make year a factor in the data not the model
+
+Nuttrans<-lmerTest::lmer(data=DamAll_Nuttrans,
+                         totaldam~Year*Nitrogen*Phosphorous*Potassium+ (1|Block))
+#check this with and with out the plot factor being in there
+Nuttrans
+anova(Nuttrans, type=3)
+
+library(performance)
+library(emmeans)
+
+emmeans(Nuttrans, pairwise ~ Year, adjust="holm")
+emmeans(Nuttrans, pairwise ~ Nitrogen, adjust="holm")
+emmeans(Nuttrans, pairwise ~ Nitrogen*Phosphorous|Potassium)
+
+### for nitrogen
+MeansN<-DamAll_Nuttrans %>%
+  group_by(Nitrogen) %>%
+  summarise(mean=mean(totaldam), se=stderror(totaldam))
+
+N <- ggplot(MeansN, aes(x=Nitrogen, y=mean)) +
+  geom_bar(stat="identity", position=position_dodge(), fill=c("#46B8DA", "#9632B8")) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.2)+
+  theme_classic()
+N
+
+
+
+###For just looking at drought effects
+DamAll_Drought<- HerbDam %>%
+  filter(Treatment %in% c("C", "NPK", "CTRL+Shelter", "NPK+, Shelter")) %>%
+  filter(Year==22) %>% # because this is the only year that drought shelters were sampled right?
+  mutate(Timepoint=as.factor(Timepoint))
+Droughttrans<-lmerTest::lmer(data=DamAll_Drought,
+                             totaldam~Timepoint*Drought*Nitrogen+ (1|Block))
+Droughttrans
+anova(Droughttrans, type=3)
+
+
+emmeans(Droughttrans, pairwise ~ Timepoint, adjust="holm")
+
+emmeans(Droughttrans, pairwise ~ Drought*Nitrogen|Species, adjust="holm")
+
+
+
+#For just looking at seasonal effects
+DamAll_Seasonal<- HerbDam %>%
+  filter(Year==22)%>%
+  filter(Drought!="D") %>%
+  mutate(Timepoint=as.factor(Timepoint))
+
+
+Season<-lmerTest::lmer(data=DamAll_Seasonal,
+                       totaldam~as.factor(Timepoint)*Nitrogen*Phosphorous*Potassium+ (1|Block))
+Season
+anova(Season, type=3)
+
+emmeans(Season, pairwise ~ Potassium, adjust="holm")
+emmeans(Season, pairwise ~ Timepoint, adjust="holm")
+emmeans(Season, pairwise ~ Phosphorous, adjust="holm")
+
+#### Bugtrans ####
+BugMetrics<-read.csv("BugMetrics.csv") %>%
+  select(-X)
+BugMetrics22<-BugMetrics%>%
+  filter(Year=="2022")%>%
+  filter(Timepoint=="2") %>%
+  group_by(Plot, Species)
+PlotWeights22<-PlotWeightsYears%>%
+  filter(Year=="2022")
+BugWeights<-left_join(BugMetrics22, Vac22Weight)
+Vac22Weight$Year<-as.numeric(Vac22Weight$Year)
+
+BugWeight <- BugWeights %>% 
+  ungroup()%>%
+  select(Block, Species, Plot, totaldam, trans, Weight) %>%
+  filter(Plot!="3")%>%
+  filter(Plot!="6") %>%
+  filter(Plot!="14") %>%
+  filter(Plot!="20")%>%
+  filter(Plot!="23") %>%
+  filter(Plot!="27")
+BugWeight<-BugWeight[!duplicated(BugWeight[c('Plot')]), ]
+
+modelBugweights <- lm(trans ~ Weight, data = BugWeight)
+summary(modelBugweights)
+BugWeightGraph<-ggplot(data = BugWeight, aes(x = Weight, y = trans)) +
   geom_point(colour = "dark grey") +
   geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
-  labs(x = "Leaf Tissue % N",
-       y = "Herbivore Damage (log(%))")+
+  labs(x = "Arthropod Weights",
+       y = "Herbivore Damage (%)")+
   theme_classic()
-NpercGraph
+BugWeightGraph
+
+
+
+
+BugGroup<-BugMetrics22%>%
+  select(Plot, Species, trans, totaldam, MaxBugRichness, MaxBPdom, MaxBugEvar, MaxBugShannon)
+BugGroup<-BugGroup[!duplicated(BugGroup[c('Plot', 'Species')]), ]
+
+BugGroup2<-BugMetrics22%>%
+  select(Plot, Species, trans, totaldam, OrthCount, WolfSpidCount, HopperCount, AntCount, SeedBugCount)
+BugGroup2<-BugGroup2[!duplicated(BugGroup2[c('Plot', 'Species')]), ]
+
+
+Bugtrans<-lmerTest::lmer(data=BugMetrics22, trans~Timepoint*Family*Species*Nitrogen*Phosphorous*Potassium+ (1|Block:Plot))
+#check this with and with out the plot factor being in there
+Bugtrans
+Anova(Bugtrans, type=3)
+BugRichGraph+theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))+
+  BugBPGraph+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))+
+  BugEvarGraph+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))+
+  BugShannGraph + theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+
+HoppGraph+theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))+
+  OrthGraph+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))+
+  WolfGraph+theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))+
+  SeedGraph+theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))+
+  AntGraph+theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))+
+  BugWeightGraph+theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+
+modelBugBP <- lm(trans ~ MaxBPdom, data = BugGroup)
+summary(modelBugBP)
+BugBPGraph<-ggplot(data = BugGroup, aes(x = MaxBPdom, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Berger-Parker Diversity",
+       y = "Herbivore Damage (%)")+
+  theme_classic()
+BugBPGraph
+
+
+modelBugRich <- lm(trans ~ MaxBugRichness, data = BugGroup)
+summary(modelBugRich)
+BugRichGraph<-ggplot(data = BugGroup, aes(x = MaxBugRichness, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Arthropod Richness",
+       y = "Herbivore Damage (%)")+
+  theme_classic()
+BugRichGraph
+
+
+modelBugEvar <- lm(trans ~ MaxBugEvar, data = BugGroup)
+summary(modelBugEvar)
+BugEvarGraph<-ggplot(data = BugGroup, aes(x = MaxBugEvar, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Arthropod Evar",
+       y = "Herbivore Damage (%)")+
+  theme_classic()
+BugEvarGraph
+
+
+modelBugShann <- lm(trans ~ MaxBugShannon, data = BugGroup)
+summary(modelBugShann)
+BugShannGraph<-ggplot(data = BugMetrics22, aes(x = MaxBugShannon, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Arthropod Shannon Diversity",
+       y = "Herbivore Damage (%)")+
+  theme_classic()
+BugShannGraph
+
+
+modelOrth <- lm(trans ~ OrthCount, data = BugGroup2)
+summary(modelOrth)
+OrthGraph<-ggplot(data = BugGroup2, aes(x = OrthCount, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Grasshopper Abundance",
+       y = "Herbivore Damage (%)")+
+  theme_classic()
+OrthGraph
+
+modelHopp <- lm(trans ~ HopperCount, data = BugGroup2)
+summary(modelHopp)
+HoppGraph<-ggplot(data = BugGroup2, aes(x = HopperCount, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Leafhopper Abundance",
+       y = "Herbivore Damage (%)")+
+  theme_classic()
+HoppGraph
+
+modelWolf <- lm(trans ~ WolfSpidCount, data = BugGroup2)
+summary(modelWolf)
+WolfGraph<-ggplot(data = BugGroup2, aes(x = WolfSpidCount, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Wolf Spider Abundance",
+       y = "Herbivore Damage (%)")+
+  theme_classic()
+WolfGraph
 
+modelSeed <- lm(trans ~ SeedBugCount, data = BugGroup2)
+summary(modelSeed)
+SeedGraph<-ggplot(data = BugGroup2, aes(x = SeedBugCount, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Seed Bug Abundance",
+       y = "Herbivore Damage (%)")+
+  theme_classic()
+SeedGraph
 
+modelAnt <- lm(trans ~ AntCount, data = BugGroup2)
+summary(modelAnt)
+AntGraph<-ggplot(data = BugGroup2, aes(x = AntCount, y = trans)) +
+  geom_point(colour = "dark grey") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
+  labs(x = "Ant Abundance",
+       y = "Herbivore Damage (%)")+
+  theme_classic()
+AntGraph
 
 
 
+emmeans(Season, pairwise ~ Potassium, adjust="holm")
+emmeans(Season, pairwise ~ Timepoint, adjust="holm")
+emmeans(Season, pairwise ~ Phosphorous, adjust="holm")
 
-#### True Damage ####
-TrueDamage<-left_join(HerbDam, Converted, by=c("Plot","Treatment"))
 
-TrueDamageCopy1<- aggregate(totaldam ~ Nitrogen + Year +Species,       # Aggregate data
-                            TrueDamage,FUN=sum) %>%
-  rename(Npresence=totaldam)
 
-TrueDamageCopy2<- aggregate(totaldam ~ Potassium + Year + Species,       # Aggregate data
-                            TrueDamage,FUN=sum) %>%
-  rename(Kpresence=totaldam)
 
-TrueDamageCopy3<- aggregate(totaldam ~ Phosphorous + Year + Species,       # Aggregate data
-                            TrueDamage,FUN=sum) %>%
-  rename(Phpresence=totaldam)
 
-TrueDamageCopy4<- aggregate(totaldam ~ Drought + Year+ Species,       # Aggregate data
-                            TrueDamage,FUN=sum) %>%
-  rename(Dpresence=totaldam)
 
-TrueDamageCopy5<-left_join(TrueDamageCopy1, TrueDamageCopy2)
-
-TrueDamageCopy6<-left_join(TrueDamageCopy5, TrueDamageCopy3)
-
-TrueDamageCopy<-left_join(TrueDamageCopy6, TrueDamageCopy4)
-
-
-
-Yeardam<-as.data.frame(aggregate(TrueDamage["totaldam"],by=TrueDamage["Year"],sum)) %>%
-  rename(Yeardamage=totaldam)
-
-TrueDamage1<-left_join(TrueDamage, Yeardam, by="Year")
-
-
-TrueDam<-left_join(TrueDamage1, TrueDamageCopy, by=c("Year", "Species", "Nitrogen", "Phosphorous","Potassium","Drought")) %>%
-  filter(Drought!="D")
-
-
-TrueDamAristida<-TrueDam %>%
-  filter(Species=="Aristida_stricta") %>%
-  filter(Drought!="D")
-
-TrueDamPity<-TrueDam %>%
-  filter(Species=="Pityopsis_aspera") %>%
-  filter(Drought!="D")
-
-TrueDamPteridium<-TrueDam %>%
-  filter(Species=="Pteridium_aquilinum") %>%
-  filter(Drought!="D")
-
-TrueDamVacc<-TrueDam %>%
-  filter(Species=="Vaccinium_tenellum") %>%
-  filter(Drought!="D")
-
-TrueDamLiatris<-TrueDam %>%
-  filter(Species=="Liatris_cokeri") %>%
-  filter(Drought!="D")
-
-
-
-
-
-TrueHerbDam<-TrueHerb %>%
-  summarise(Block, Plot, Species, Treatment_Year, HerbType, HerbPerc, Year, Nitrogen, Phosphorous, Potassium, Drought) %>%
-  group_by(Plot, Species, Treatment_Year) %>%
-  mutate(Damage= sum(HerbPerc))%>%
-  ungroup() %>%
-  mutate(totaldam=Damage) %>%
-  select(Block, Plot, Species, Treatment_Year, HerbPerc, totaldam, Year, Nitrogen, Phosphorous, Potassium, Drought, HerbType)
-
-mutate(DDamage = ifelse(Drought %in% "D", avgherb, Drought)) %>%
-  mutate(DDamage = ifelse(Drought %in% "C", avgherb, Drought))
-
-mutate(Block= ifelse(Plot %in% c(11:20), "2", Block))
-mutate(Block=ifelse(Plot %in% c(21:30), "3", Block))
-
-
-
-
-HerbDam20to21<- HerbDam %>%
-  filter(Year!="TP1")
-
-
-ASHerbDam<-HerbDam %>%
-  filter(Species=="Aristida_stricta")
-
-
-
-
-
-HerbTypeTreat20<- ggplot(Herb20Stretch, aes(x=Treatment, y=HerbPerc, fill=HerbType))+
-  geom_bar(stat="identity",position="dodge")
-HerbTypeTreat20
-
-
-Herb20TreatDiv<- ggplot(Herb20Div, aes(x=Treatment_Year, y=Totalherb, fill=HerbType))+
-  geom_bar(stat="identity",position="dodge")
-Herb20TreatDiv
-
-
-
-HerbTypeTreat21<- ggplot(Herb21Stretch, aes(x=Treatment, y=HerbPerc, fill=HerbType))+
-  geom_bar(stat="identity",position="dodge")
-HerbTypeTreat21
-
-
-HerbTypeTreatTP1<- ggplot(TP1Herb22Stretch, aes(x=Treatment, y=HerbPerc, fill=HerbType))+
-  geom_bar(stat="identity",position="dodge")
-HerbTypeTreatTP1
-
-
-HerbConall<- ggplot(HconComp, aes(x=Treatment_Year, y=HerbPerc, fill=HerbType))+
-  geom_bar(stat="identity",position="dodge")
-HerbConall
-
-Herball<- ggplot(HCompall, aes(x=Treatment_Year, y=HerbPerc, fill=HerbType))+
-  geom_bar(stat="identity",position="dodge")
-Herball
-
-
-
-####Linear Regressions: You should start here! ####
-TrueDamage<-left_join(HerbDam, Converted, by=c("Plot","Treatment"))
-
-AllRegression22<- TrueDam22 %>%
-  filter(Drought!='D')%>%
-  aggregate(totaldam ~ Nitrogen+Phosphorous+Potassium+Plot+Year,       # Aggregate data
-            FUN=sum) %>%
-  rename(Nutpresence=totaldam)
-
-
-NitrogenRegression<- TrueDamage %>%
-  filter(Drought!='D')%>%
-  aggregate(totaldam ~ Nitrogen +Plot+ Year,       # Aggregate data
-            FUN=sum) %>%
-  rename(Npresence=totaldam)
-
-###Nutrients TP2 ####
-PlantNut22<-read.csv("NutrientsTP2.csv", stringsAsFactors = F)
-
-NregressTP2<-left_join(NitrogenRegression,PlantNutTP2)
-
-Allregress22<-left_join(AllRegression22, PlantNutTP2)
-Metrics<- read.csv("PlantCommunityMetrics.csv", stringsAsFactors = F)
-Allregress22<-left_join(Allregress22, Metrics)
-
-TrueDamageall<-left_join(HerbDamyears, Converted, by=c("Plot","Treatment"))
-
-TrueDam22<-TrueDamageall%>%
-  filter(Year!="20")%>%
-  filter(Year!="21")%>%
-  filter(Year!="23") %>%
-  filter(Drought!='D') %>%
-  select(-Drought)
-NRegression22<- TrueDam22 %>%
-  filter(Drought!='D')%>%
-  aggregate(totaldam ~ Nitrogen +Plot+ Year,       # Aggregate data
-            FUN=sum) %>%
-  rename(Npresence=totaldam)
-
-Nregress22<-left_join(NRegression22,PlantNutTP2)
-
-
-
-PRegression22<- TrueDam22 %>%
-  filter(Drought!='D')%>%
-  aggregate(totaldam ~ Phosphorous +Plot+ Year,       # Aggregate data
-            FUN=sum) %>%
-  rename(Ppresence=totaldam)
-Pregress22<-left_join(PRegression22,PlantNutTP2)
-
-
-KRegression22<- TrueDam22 %>%
-  filter(Drought!='D')%>%
-  aggregate(totaldam ~ Potassium +Plot+ Year,       # Aggregate data
-            FUN=sum) %>%
-  rename(Kpresence=totaldam)
-Kregress22<-left_join(KRegression22,PlantNutTP2)
-
-
-#####Use Nitrogen nutriend order results to mark the data against. (Pure Nitrogen number x Herbivory amount(Npresence))####
-
-#Example#
-Exampleregression<-lm(happiness ~ income, data= income.data)
-summary(income.happiness.lm)
-
-Exampleregressiongraph<-ggplot(income.data, aes(x=income, y=happiness))+ geom_point()
-Exampleregressiongraph
-
-####PeakHerbYears Regressions ####
-PeakHerbYears<-HerbDamYear%>%
-  filter(Time.Point=="2") %>%
-  filter(Treatment!="CTRL+Shelter")%>%
-  filter(Treatment!="NPK+, Shelter")
-
-PeakReg22<-PeakHerbYears%>%
-  filter(year=="2022")
-PeakReg22<-left_join(PeakReg22, PlantNutTP2)%>%
-  filter(Treatment!="CTRL+Shelter")%>%
-  filter(Treatment!="NPK+, Shelter")
-
-PlantNutTP2<-PlantNutTP2%>%
-  #rename(Timepoint=Time.Point)%>%
-  mutate(Year=paste("22"))%>%
-  mutate(Timepoint=as.numeric(Timepoint))
-
-
-####DamAll_Regs####
-Metrics[c('2', 'Year')] <- str_split_fixed(Metrics$year, '0', 2)
-Matrics<-Metrics%>%
-  select(-year, -"2")
-
-DamAll_Reg<-left_join(DamAll_Nuttrans, PlantNutTP2)
-DamAll_Reg<-left_join(DamAll_Reg, Metrics)
-write.csv(DamAll_Reg, "AllDamRegs.csv")
-DamAll_Reg<-read.csv("AllDamRegs.csv")
-DamAll_Reg22<-DamAll_Reg%>%
-  filter(Year=="22")%>%
-  filter(Timepoint=="2")
-####Use DamAll_Reg for all regressions. Use only 2022 for regression lines. Record Chi-sq, Df, and Pr(>Chisq) ####
-
-Regtrans<-lmerTest::lmer(data=DamAll_Reg,
-                         trans~Year*Species*Nitrogen*Phosphorous*Potassium+ (1|Block)+ (1|Plot:Year))
-Regtrans
-Anova(Regtrans, type=3)
-
-
-Regtrans22<-lmerTest::lmer(data=DamAll_Reg22,
-                           trans~Species+MaxShannon+MaxRichness+MaxEvar+MaxBPdom+Maxwirecov+Maxgraminoidcov+Maxforbcov+Maxdomspp1+forbbiomass+graminoidbiomass+legumebiomass+litterbiomass+pineneedlebiomass+woodybiomass+ (1|Block)+ (1|Plot:Year))
-Regtrans22
-Anova(Regtrans22, type=3)
-
-
-
-NYear <- lm(trans ~ Nperc, data = DamAll_Reg22)
-summary(NYear)
-
-NYearGraph<-ggplot(NYear, aes(x=Nperc, y=trans))+geom_point()
-NYearGraph<-NYearGraph+geom_smooth(method = "lm", col="black")
-NYearGraph
-#saved#
-
-
-#Significant#
-PYear <- lm(trans ~ Pperc, data = PeakReg22)
-summary(PYear)
-
-PYearGraph<-ggplot(PYear, aes(x=Pperc, y=trans))+geom_point()
-PYearGraph<-PYearGraph+geom_smooth(method = "lm", col="black")
-PYearGraph
-#Saved#
-
-KYear <- lm(trans ~ Kperc, data = PeakReg22)
-summary(KYear)
-
-KYearGraph<-ggplot(KYear, aes(x=Kperc, y=trans))+geom_point()
-KYearGraph<-KYearGraph+geom_smooth(method = "lm", col="black")
-KYearGraph
-
-#Richness; Significant in both#
-RichYear <- lm(trans ~ MaxRichness, data = PeakHerbYears)
-summary(RichYear)
-
-RichYearGraph<-ggplot(RichYear, aes(x=MaxRichness, y=trans))+geom_point()
-RichYearGraph<-RichYearGraph+geom_smooth(method = "lm", col="black")
-RichYearGraph
-
-RichYear <- lm(totaldam ~ MaxRichness, data = PeakHerbYears)
-summary(RichYear)
-
-RichYearGraph<-ggplot(RichYear, aes(x=MaxRichness, y=totaldam))+geom_point()
-RichYearGraph<-RichYearGraph+geom_smooth(method = "lm", col="black")
-RichYearGraph
-
-#Shannon diversity; sig with totaldam#
-ShannYear <- lm(trans ~ MaxShannon, data = PeakHerbYears)
-summary(ShannYear)
-
-ShannYearGraph<-ggplot(ShannYear, aes(x=MaxShannon, y=trans))+geom_point()
-ShannYearGraph<-ShannYearGraph+geom_smooth(method = "lm", col="black")
-ShannYearGraph
-
-ShannYear <- lm(totaldam ~ MaxShannon, data = PeakHerbYears)
-summary(ShannYear)
-
-ShannYearGraph<-ggplot(ShannYear, aes(x=MaxShannon, y=totaldam))+geom_point()
-ShannYearGraph<-ShannYearGraph+geom_smooth(method = "lm", col="black")
-ShannYearGraph
-
-#significant w/totaldam, not trans data (Ask Sally)#
-BPYear <- lm(trans ~ MaxBPdom, data = PeakHerbYears)
-summary(BPYear)
-
-BPYearGraph<-ggplot(BPYear, aes(x=MaxBPdom, y=trans))+geom_point()
-BPYearGraph<-BPYearGraph+geom_smooth(method = "lm", col="black")
-BPYearGraph
-
-BPYear <- lm(totaldam ~ MaxBPdom, data = PeakHerbYears)
-summary(BPYear)
-
-BPYearGraph<-ggplot(BPYear, aes(x=MaxBPdom, y=totaldam))+geom_point()
-BPYearGraph<-BPYearGraph+geom_smooth(method = "lm", col="black")
-BPYearGraph
-#Saved#
-
-#Forb cover#
-ForbYear <- lm(trans ~ Maxforbcov, data = PeakHerbYears)
-summary(ForbYear)
-
-ForbYearGraph<-ggplot(ForbYear, aes(x=Maxforbcov, y=trans))+geom_point()
-ForbYearGraph<-ForbYearGraph+geom_smooth(method = "lm", col="black")
-ForbYearGraph
-
-ForbYear <- lm(totaldam ~ Maxforbcov, data = PeakHerbYears)
-summary(ForbYear)
-
-ForbYearGraph<-ggplot(ForbYear, aes(x=Maxforbcov, y=totaldam))+geom_point()
-ForbYearGraph<-ForbYearGraph+geom_smooth(method = "lm", col="black")
-ForbYearGraph
-#saved#
-
-#Gram cover#
-GramYear <- lm(trans ~ Maxgraminoidcov, data = PeakHerbYears)
-summary(GramYear)
-
-GramYearGraph<-ggplot(GramYear, aes(x=Maxgraminoidcov, y=trans))+geom_point()
-GramYearGraph<-GramYearGraph+geom_smooth(method = "lm", col="black")
-GramYearGraph
-
-GramYear <- lm(totaldam ~ Maxgraminoidcov, data = PeakHerbYears)
-summary(GramYear)
-
-GramYearGraph<-ggplot(GramYear, aes(x=Maxgraminoidcov, y=totaldam))+geom_point()
-GramYearGraph<-GramYearGraph+geom_smooth(method = "lm", col="black")
-GramYearGraph
-
-#Wire cover; sig with trans, not totaldam#
-WireYear <- lm(trans ~ Maxwirecov, data = PeakHerbYears)
-summary(WireYear)
-
-WireYearGraph<-ggplot(WireYear, aes(x=Maxwirecov, y=trans))+geom_point()
-WireYearGraph<-WireYearGraph+geom_smooth(method = "lm", col="black")
-WireYearGraph
-
-WireYear <- lm(totaldam ~ Maxwirecov, data = PeakHerbYears)
-summary(WireYear)
-
-WireYearGraph<-ggplot(WireYear, aes(x=Maxwirecov, y=totaldam))+geom_point()
-WireYearGraph<-WireYearGraph+geom_smooth(method = "lm", col="black")
-WireYearGraph
-
-
-#Dom species; some sig w/trans#
-MaxspYear <- lm(trans ~ Maxdomspp1, data = PeakHerbYears)
-summary(MaxspYear)
-
-MaxspYearGraph<-ggplot(MaxspYear, aes(x=Maxdomspp1, y=trans))+geom_point()
-MaxspYearGraph<-MaxspYearGraph+geom_smooth(method = "lm", col="black")
-MaxspYearGraph
-
-MaxspYear <- lm(totaldam ~ Maxdomspp1, data = PeakHerbYears)
-summary(MaxspYear)
-
-MaxspYearGraph<-ggplot(MaxspYear, aes(x=Maxdomspp1, y=totaldam))+geom_point()
-MaxspYearGraph<-MaxspYearGraph+geom_smooth(method = "lm", col="black")
-MaxspYearGraph
-
-
-#Forb biomass#
-ForbbioYear <- lm(trans ~ forbbiomass, data = PeakHerbYears)
-summary(ForbbioYear)
-
-ForbbioYearGraph<-ggplot(ForbbioYear, aes(x=forbbiomass, y=trans))+geom_point()
-ForbbioYearGraph<-ForbbioYearGraph+geom_smooth(method = "lm", col="black")
-ForbbioYearGraph
-
-ForbbioYear <- lm(totaldam ~ forbbiomass, data = PeakHerbYears)
-summary(ForbbioYear)
-
-ForbbioYearGraph<-ggplot(ForbbioYear, aes(x=forbbiomass, y=totaldam))+geom_point()
-ForbbioYearGraph<-ForbbioYearGraph+geom_smooth(method = "lm", col="black")
-ForbbioYearGraph
-
-#Gram biomass#
-GrambioYear <- lm(trans ~ graminoidbiomass, data = PeakHerbYears)
-summary(GrambioYear)
-
-GrambioYearGraph<-ggplot(GrambioYear, aes(x=graminoidbiomass, y=trans))+geom_point()
-GrambioYearGraph<-GrambioYearGraph+geom_smooth(method = "lm", col="black")
-GrambioYearGraph
-
-GrambioYear <- lm(totaldam ~ graminoidbiomass, data = PeakHerbYears)
-summary(GrambioYear)
-
-GrambioYearGraph<-ggplot(GrambioYear, aes(x=graminoidbiomass, y=totaldam))+geom_point()
-GrambioYearGraph<-GrambioYearGraph+geom_smooth(method = "lm", col="black")
-GrambioYearGraph
-
-#Legume biomass; some significance w/both#
-LegbioYear <- lm(trans ~ legumebiomass, data = PeakHerbYears)
-summary(LegbioYear)
-
-LegbioYearGraph<-ggplot(LegbioYear, aes(x=legumebiomass, y=trans))+geom_point()
-LegbioYearGraph<-LegbioYearGraph+geom_smooth(method = "lm", col="black")
-LegbioYearGraph
-
-LegbioYear <- lm(totaldam ~ legumebiomass, data = PeakHerbYears)
-summary(LegbioYear)
-
-LegbioYearGraph<-ggplot(LegbioYear, aes(x=legumebiomass, y=totaldam))+geom_point()
-LegbioYearGraph<-LegbioYearGraph+geom_smooth(method = "lm", col="black")
-LegbioYearGraph
-
-#Litter biomass; extremely significant in both#
-LitbioYear <- lm(trans ~ litterbiomass, data = PeakHerbYears)
-summary(LitbioYear)
-
-LitbioYearGraph<-ggplot(LitbioYear, aes(x=litterbiomass, y=trans))+geom_point()
-LitbioYearGraph<-LitbioYearGraph+geom_smooth(method = "lm", col="black")
-LitbioYearGraph
-
-LitbioYear <- lm(totaldam ~ litterbiomass, data = PeakHerbYears)
-summary(LitbioYear)
-
-LitbioYearGraph<-ggplot(LitbioYear, aes(x=litterbiomass, y=totaldam))+geom_point()
-LitbioYearGraph<-LitbioYearGraph+geom_smooth(method = "lm", col="black")
-LitbioYearGraph
-
-#Pine needle biomass; extremely significant in both#
-PinebioYear <- lm(trans ~ pineneedlebiomass, data = PeakHerbYears)
-summary(PinebioYear)
-
-PinebioYearGraph<-ggplot(PinebioYear, aes(x=pineneedlebiomass, y=trans))+geom_point()
-PinebioYearGraph<-PinebioYearGraph+geom_smooth(method = "lm", col="black")
-PinebioYearGraph
-
-PinebioYear <- lm(totaldam ~ pineneedlebiomass, data = PeakHerbYears)
-summary(PinebioYear)
-
-PinebioYearGraph<-ggplot(PinebioYear, aes(x=pineneedlebiomass, y=totaldam))+geom_point()
-PinebioYearGraph<-PinebioYearGraph+geom_smooth(method = "lm", col="black")
-PinebioYearGraph
-
-#Woody biomass; sig with trans, not totaldam#
-WoodbioYear <- lm(trans ~ woodybiomass, data = PeakHerbYears)
-summary(WoodbioYear)
-
-WoodbioYearGraph<-ggplot(WoodbioYear, aes(x=woodybiomass, y=trans))+geom_point()
-WoodbioYearGraph<-WoodbioYearGraph+geom_smooth(method = "lm", col="black")
-WoodbioYearGraph
-
-WoodbioYear <- lm(totaldam ~ woodybiomass, data = PeakHerbYears)
-summary(WoodbioYear)
-
-WoodbioYearGraph<-ggplot(WoodbioYear, aes(x=woodybiomass, y=totaldam))+geom_point()
-WoodbioYearGraph<-WoodbioYearGraph+geom_smooth(method = "lm", col="black")
-WoodbioYearGraph
-
-
-
-
-#####Nitrogen Regression#####
-
-RegressN22 <- lm(Npresence ~ N, data = Nregress22)
-summary(RegressN22)
-
-
-Nregress22TP1<-Nregress22 %>%
-  filter(Year=="22-TP1")
-
-RegressN22TP1<-lm(Npresence ~ N, data = Nregress22TP1)
-summary(RegressN22TP1)
-
-Nregress22TP2<-Nregress22 %>%
-  filter(Year=="22-TP2")
-
-RegressN22TP2<-lm(Npresence ~ N, data = Nregress22TP2)
-summary(RegressN22TP2)
-
-Nregress22TP3<-Nregress22 %>%
-  filter(Year=="22-TP3")
-
-RegressN22TP3<-lm(Npresence ~ N, data = Nregress22TP3)
-summary(RegressN22TP3)
-
-
-
-#####Phosphorous Regression#####
-
-RegressP22 <- lm(Ppresence ~ P, data = Pregress22)
-summary(RegressP22)
-
-Pregressgraph22<-ggplot(Pregress22, aes(x=Pperc, y=Ppresence))+geom_point()
-Pregressgraph22<-Pregressgraph22+geom_smooth(method = "lm", col="black")
-Pregressgraph22
-
-
-Pregress22TP1<-Pregress22 %>%
-  filter(Year=="22-TP1")
-
-RegressP22TP1<-lm(Ppresence ~ P, data = Pregress22TP1)
-summary(RegressP22TP1)
-
-Pregress22TP2<-Pregress22 %>%
-  filter(Year=="22-TP2")
-
-RegressP22TP2<-lm(Ppresence ~ P, data = Pregress22TP2)
-summary(RegressP22TP2)
-
-Pregress22TP3<-Pregress22 %>%
-  filter(Year=="22-TP3")
-
-RegressP22TP3<-lm(Ppresence ~ P, data = Pregress22TP3)
-summary(RegressP22TP3)
-
-
-#####Potassium Regression#####
-
-RegressK22 <- lm(Kpresence ~ K, data = Kregress22)
-summary(RegressK22)
-
-Kregressgraph22<-ggplot(Kregress22, aes(x=K, y=Kpresence))+geom_point()
-Kregressgraph22<-Kregressgraph22+geom_smooth(method = "lm", col="black")
-Kregressgraph22
-
-
-Kregress22TP1<-Kregress22 %>%
-  filter(Year=="22-TP1")
-
-RegressK22TP1<-lm(Kpresence ~ K, data = Kregress22TP1)
-summary(RegressK22TP1)
-
-
-
-Kregress22TP2<-Kregress22 %>%
-  filter(Year=="22-TP2")
-
-RegressK22TP2<-lm(Kpresence ~ K, data = Kregress22TP2)
-summary(RegressK22TP2)
-
-Kregressgraph22TP2<-ggplot(Kregress22TP2, aes(x=K, y=Kpresence))+geom_point()
-Kregressgraph22TP2<-Kregressgraph22TP2+geom_smooth(method = "lm", col="black")
-Kregressgraph22TP2
-
-
-Kregress22TP3<-Kregress22 %>%
-  filter(Year=="22-TP3")
-
-RegressK22TP3<-lm(Kpresence ~ K, data = Kregress22TP3)
-summary(RegressK22TP3)
-
-####All Regression####
-## Nitrogen ##
-NewRegressN22<-lm(Nutpresence ~ N, data = Allregress22)
-summary(NewRegressN22)
-
-Nregnut22<-ggplot(Allregress22, aes(x=N, y=Nutpresence))+geom_point()
-Nregnut22<-Nregnut22+geom_smooth(method = "lm", col="black")
-Nregnut22
-
-
-## Phosphorous ##
-NewRegressP22<-lm(Nutpresence ~ P, data = Allregress22)
-summary(NewRegressP22)
-
-Pregnut22<-ggplot(Allregress22, aes(x=P, y=Nutpresence))+geom_point()
-Pregnut22<-Nregnut22+geom_smooth(method = "lm", col="black")
-Pregnut22
-
-
-
-## Potassium ##
-NewRegressK22<-lm(Nutpresence ~ K, data = Allregress22)
-summary(NewRegressK22)
-
-Kregnut22<-ggplot(Allregress22, aes(x=K, y=Nutpresence))+geom_point()
-Kregnut22<-Kregnut22+geom_smooth(method = "lm", col="black")
-Kregnut22
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#Example Regression Code #
-Nregress22TP1<-Nregress22 %>%
-  filter(Year=="22-TP1")
-
-RegressN22TP1<-lm(Npresence ~ N, data = Nregress22TP1)
-summary(RegressN22TP1)
-
-Nregress22TP2<-Nregress22 %>%
-  filter(Year=="22-TP2")
-
-RegressN22TP2<-lm(Npresence ~ N, data = Nregress22TP2)
-summary(RegressN22TP2)
-
-Nregress22TP3<-Nregress22 %>%
-  filter(Year=="22-TP3")
-
-RegressN22TP3<-lm(Npresence ~ N, data = Nregress22TP3)
-summary(RegressN22TP3)
-
-
-
-
-####Compare Number of Orders observed in Each treatment and year, taking account for randomness in Plot ####
-
-OrdNutTreat<-lmerTest::lmer(data=Vac_20to21Ord, OrdCount~Treatment*Year+ (1|Plot))
-OrdNutTreat
-
-anova(OrdNutTreat, type=3)
-
-
-
-
-Bigmodel<-lmerTest::lmer(data=Vac_20to21Ord, Relcover~Treatment*Year*Order+ (1|Plot))
-Bigmodel
-
-anova(Bigmodel, type=3)
-
-
-
-
-
-####Massive analysis####
-
-BigH<-lmerTest::lmer(data=HCompall, avgherb~Treatment*Year*Species*HerbType+ (1|Block))
-BigH
-
-anova(BigH, type=3)
-
-
-
-####Edits from Dr. K####
-Converted<-read.csv("ConvertedTreat.csv")
-
-
-TrueHerb<-left_join(HCompall, Converted, by="Plot") %>%
-  select(-Treatment.y) %>%
-  rename(Treatment=Treatment.x) %>%
-  summarise(Block, Plot, Species, Treatment_Year, HerbType, HerbPerc, Year, Nitrogen, Phosphorous, Potassium, Drought) %>%
-  group_by(Plot, Species, Treatment_Year) %>%
-  ungroup()
-
-
-
-TrueHDamTest<-lmerTest::lmer(data=TrueDamage, totaldam~Nitrogen*Phosphorous*Potassium*Drought*Year*Species+ (1|Block))
-TrueHDamTest
-
-anova(TrueHDamTest, type=3)
-
-
-#####TRUE DAM SPECIES GRAPHS ####
-
-
-#####NITROGEN ESA GRAPHS#####
-
-NYears<-ggplot(data=TrueDam, aes(x=Year, y=Npresence, color=Nitrogen, group=2)) +
-  geom_point() + labs(title="Herbivory in the presence of N")
-NYears
-NYAristida<-ggplot(data=TrueDamAristida, aes(x=Year, y=Npresence, color=Nitrogen, group=2)) +
-  geom_point() + labs(title="Herbivory of Aristida stricta in the presence of N")
-NYAristida
-
-NYPityopsis<-ggplot(data=TrueDamPity, aes(x=Year, y=Npresence, color=Nitrogen, group=2)) +
-  geom_point() + labs(title="Herbivory of Pityopsis aspera in the presence of N")
-NYPityopsis
-
-NYPteridium<-ggplot(data=TrueDamPteridium, aes(x=Year, y=Npresence, color=Nitrogen, group=2)) +
-  geom_point() + labs(title="Herbivory of Pteridium aquilinum in the presence of N")
-NYPteridium
-
-NYVacc<-ggplot(data=TrueDamVacc, aes(x=Year, y=Npresence, color=Nitrogen, group=2)) +
-  geom_point() + labs(title="Herbivory of Vaccinium tenellum in the presence of N")
-NYVacc
-
-NYLiatris<-ggplot(data=TrueDamLiatris, aes(x=Year, y=Npresence, color=Nitrogen, group=2)) +
-  geom_point() + labs(title="Herbivory of Liatris cokeri in the presence of N")
-NYLiatris
-
-#####Phosphorous ESA Graphs ####
-
-PhYears<-ggplot(data=TrueDam, aes(x=Year, y=Phpresence, color=Phosphorous, group=2)) +
-  geom_point() + labs(title="Herbivory in the presence of P")
-PhYears
-PhAristida<-ggplot(data=TrueDamAristida, aes(x=Year, y=Phpresence, color=Phosphorous, group=2)) +
-  geom_point() + labs(title="Herbivory of Aristida stricta in the presence of P")
-PhAristida
-
-PhPityopsis<-ggplot(data=TrueDamPity, aes(x=Year, y=Phpresence, color=Phosphorous, group=2)) +
-  geom_point() + labs(title="Herbivory of Pityopsis aspera in the presence of P")
-PhPityopsis
-
-PhPteridium<-ggplot(data=TrueDamPteridium, aes(x=Year, y=Phpresence, color=Phosphorous, group=2)) +
-  geom_point() + labs(title="Herbivory of Pteridium aquilinum in the presence of P")
-PhPteridium
-
-PhVacc<-ggplot(data=TrueDamVacc, aes(x=Year, y=Phpresence, color=Phosphorous, group=2)) +
-  geom_point() + labs(title="Herbivory of Vaccinium tenellum in the presence of P")
-PhVacc
-
-PhLiatris<-ggplot(data=TrueDamLiatris, aes(x=Year, y=Phpresence, color=Phosphorous, group=2)) +
-  geom_point() + labs(title="Herbivory of Liatris cokeri in the presence of P")
-PhLiatris
-
-
-
-
-
-#####Potassium ESA Graphs####
-
-KYears<-ggplot(data=TrueDam, aes(x=Year, y=Kpresence, color=Potassium, group=2)) +
-  geom_point() + labs(title="Herbivory in the presence of K")
-KYears
-KAristida<-ggplot(data=TrueDamAristida, aes(x=Year, y=Kpresence, color=Potassium, group=2)) +
-  geom_point() + labs(title="Herbivory of Aristida stricta in the presence of K")
-KAristida
-
-KPityopsis<-ggplot(data=TrueDamPity, aes(x=Year, y=Kpresence, color=Potassium, group=2)) +
-  geom_point() + labs(title="Herbivory of Pityopsis aspera in the presence of K")
-KPityopsis
-
-KPteridium<-ggplot(data=TrueDamPteridium, aes(x=Year, y=Kpresence, color=Potassium, group=2)) +
-  geom_point() + labs(title="Herbivory of Pteridium aquilinum in the presence of K")
-KPteridium
-
-KVacc<-ggplot(data=TrueDamVacc, aes(x=Year, y=Kpresence, color=Potassium, group=2)) +
-  geom_point() + labs(title="Herbivory of Vaccinium tenellum in the presence of K")
-KVacc
-
-KLiatris<-ggplot(data=TrueDamLiatris, aes(x=Year, y=Kpresence, color=Potassium, group=2)) +
-  geom_point() + labs(title="Herbivory of Liatris cokeri in the presence of K")
-KLiatris
-
-
-
-
-
-
-
-
-TrueHTest2<-lmerTest::lmer(data=HerbDam, totaldam~Nitrogen*Phosphorous*Potassium*Drought*Year*Species+ (1|Block))
-TrueHTest2
-
-anova(TrueHTest2, type=3)
-
-
-
-
-##Use HerbDam or Totaldam instead?
-#HerbDam for damage type differences, TotalDam for just damage
-
-#with care for HERBTYPE
-TrueHDamTest<-lmerTest::lmer(data=TrueDamage, totaldam~Nitrogen*Phosphorous*Potassium*Drought*Year*Species+ (1|Block))
-TrueHDamTest
-
-anova(TrueHDamTest, type=3)
-
-#No HerbTYPE. Use avgherb or totaldam?
-TrueTDamTest<-lmerTest::lmer(data=TrueHerbDam, totaldam~Nitrogen*Phosphorous*Potassium*Drought*Year*Species+ (1|Block))
-TrueTDamTest
-
-anova(TrueTDamTest, type=3)
-
-
-#Analysis by year will be faster and will not overwhelm R with yearly differences
-#2020
-herb2020 <- lmerTest::lmer(data=subset(HCompall, Year == "20"), avgherb~Treatment*Species*HerbType + (1|Block))
-
-anova(herb2020, type=3)
-
-
-
-#2021
-herb2021 <- lmerTest::lmer(data=subset(HCompall, Year == "21"), avgherb~Treatment*Species*HerbType + (1|Block))
-
-anova(herb2021, type=3)
-
-
-
-#Aristida_S
-Astrict<-lmerTest::lmer(data=subset(HCompall, Species == "Aristida_stricta"), avgherb~Treatment*HerbType*Year + (1|Block))
-anova(Astrict, type=3)
-
-
-Astrict20<-lmerTest::lmer(data=subset(HCompall, Species == "Aristida_stricta" & Year=="20"), avgherb~Treatment*HerbType + (1|Block))
-anova(Astrict20, type=3)
-
-
-Astrict21<-lmerTest::lmer(data=subset(HCompall, Species == "Aristida_stricta" & Year=="21"), avgherb~Treatment*HerbType + (1|Block))
-anova(Astrict21, type=3)
-
-
-AstrictTP1<-lmerTest::lmer(data=subset(HCompall, Species == "Aristida_stricta" & Year=="TP1"), avgherb~Treatment*HerbType + (1|Block))
-anova(AstrictTP1, type=3)
-
-
-
-
-
-
-#Group by all values except HerbPerc
-#Example
-group_by(site, year, realg) %>%
-  summarise(avg = mean(green_diff), se = sd(green_diff)/sqrt(length(green_diff))) %>%
-  ungroup()
-
-#add error bars
-#Example
-geom_errorbar(aes(ymin = avgins - seins, ymax = avgins + seins), width=.2, position=position_dodge(.05))
-
-####Totaldam Figures####
-
-#Total Arthropod Herbivory damage across all years and species
-HerbDamage <- ggplot(data = HerbDam, aes(x = Treatment, y = totaldam, fill=Year)) + geom_bar(stat = "identity") + facet_grid(~ Year, scales = "free")
-HerbDamage
-
-
-HerbDamageYears <- ggplot(data = HerbDamyears, aes(x = Treatment, y = totaldam, fill=Year)) + geom_bar(stat = "identity") + facet_grid(~ Year, scales = "free")
-HerbDamageYears
-
-
-DroughtHerbDamage <- ggplot(data = TrueHerbDam, aes(x = Year, y = DDamage, fill=Drought)) + geom_bar(stat = "identity")
-DroughtHerbDamage
-
-
-
-
-
-HerbDamage20to21<-ggplot(data = HerbDam20to21, aes(x = Treatment, y = totaldam, fill=Year)) + geom_bar(stat = "identity") + facet_grid(~ Year, scales = "free")
-HerbDamage20to21
-
-
-#Total Arthropod Herbivory damage across all years on Aristida stricta
-ASDamage<- ggplot(data = ASHerbDam, aes(x = Treatment, y = totaldam, fill=Year)) + geom_bar(stat = "identity") + facet_grid(~ Year, scales = "free")
-ASDamage
-
-
-#Total across years on Pityopsis aspera
-PAHerbDam<- HerbDam %>%
-  filter(Species=="Pityopsis_aspera")
-
-
-PADamage<- ggplot(data = PAHerbDam, aes(x = Treatment, y = totaldam, fill=Year)) + geom_bar(stat = "identity") + facet_grid(~ Year, scales = "free")
-PADamage
-
-#Total across years on Pteridium aquilinum
-PtAHerbDam<-ggplot(data=subset(HerbDam, Species == "Pteridium_aquilinum"), aes(x = Treatment, y = totaldam, fill = Year)) +ggtitle("LLP Fern Herbivore Damage") + geom_bar(stat = "identity")+ facet_wrap( ~ Year, scales = "free")
-PtAHerbDam
-
-#Total across years on Vaccinium tenellum
-VtHerbDam<-ggplot(data=subset(HerbDam, Species == "Vaccinium_tenellum"), aes(x = Treatment, y = totaldam, fill = Year)) +ggtitle("Vaccinium t Herbivore Damage") + geom_bar(stat = "identity")+ facet_wrap( ~ Year, scales = "free")
-VtHerbDam
-
-
-
-
-
-####HerbPlot figures####
-Herbplot<- ggplot(data = HCompall, aes(x = Treatment, y = HerbPerc, fill = HerbType)) + geom_bar(stat = "identity") + facet_grid(HerbType ~ Year, scales = "free")
-Herbplot
-
-
-HCompall20<- HCompall %>%
-  filter(Year=="20")
-
-HCompall21<- HCompall %>%
-  filter(Year=="21")
-
-HCompallTP1<- HCompall %>%
-  filter(Year=="TP1")
-
-ASplot<- ggplot(data=subset(HCompall, Species == "Aristida_stricta"), aes(x = Treatment, y = avgherb, fill = HerbType)) +ggtitle("Aristida stricta Herbivore Damage") + geom_bar(stat = "identity")+ facet_wrap( ~ Year, scales = "free")
-ASplot
-
-
-ASplot20<- ggplot(data=subset(HCompall20, Species == "Aristida_stricta"), aes(x = Treatment, y = avgherb, fill = HerbType)) +ggtitle("Aristida stricta Herbivore Damage") + geom_bar(stat = "identity")+ facet_wrap( ~ Year, scales = "free")
-ASplot20
-
-ASplot21<- ggplot(data=subset(HCompall21, Species == "Aristida_stricta"), aes(x = Treatment, y = avgherb, fill = HerbType)) +ggtitle("Aristida stricta Herbivore Damage") + geom_bar(stat = "identity")+ facet_wrap( ~ Year, scales = "free")
-ASplot21
-
-ASplotTP1<- ggplot(data=subset(HCompallTP1, Species == "Aristida_stricta"), aes(x = Treatment, y = avgherb, fill = HerbType)) +ggtitle("Aristida stricta Herbivore Damage") + geom_bar(stat = "identity")+ facet_wrap( ~ Year, scales = "free")
-ASplotTP1
-
-
-PAplot<- ggplot(data=subset(HCompall, Species == "Pityopsis_aspera"), aes(x = Treatment, y = avgherb, fill = HerbType)) +ggtitle("Pityopsis aspera Herbivore Damage") + geom_bar(stat = "identity")+ facet_wrap( ~ Year, scales = "free")
-PAplot
-
-
-PtAplot<- ggplot(data=subset(HCompall, Species == "Pteridium_aquilinum"), aes(x = Treatment, y = avgherb, fill = HerbType))+ggtitle("Pteridium aquilinum Herbivore Damage") + geom_bar(stat = "identity") + facet_wrap( ~ Year, scales = "free")
-PtAplot
-
-
-VTplot<- ggplot(data=subset(HCompall, Species == "Vaccinium_tenellum"), aes(x = Treatment, y = avgherb, fill = HerbType))+ggtitle("Vaccinium tenellum Herbivore Damage") + geom_bar(stat = "identity") + facet_wrap( ~ Year, scales = "free")
-VTplot
-
-
-#2022
-herbTP1 <- lmerTest::lmer(data=subset(HCompall, Year == "TP1"), avgherb~Treatment*Species*HerbType + (1|Block))
-
-anova(herbTP1, type=3)
-
-
-
-
-#repeated measures anova with 2 independent variables
-anova_t3 <- function(IndVars=IndVars, DepVar=DepVar, RndForm=RndForm, Data=Data){
-  anova_out <- {}
-  IndVarMatrix <- matrix(nrow=length(IndVars),ncol=length(IndVars))
-  IndVars2x <- c(IndVars,IndVars)
-  
-  for(REORDER in 1:length(IndVars)){
-    IndVarMatrix[REORDER,] <- IndVars2x[REORDER:(length(IndVars)+(REORDER-1))]
-  }
-  rm(IndVars2x)
-  
-  for(RUN in 1:length(IndVars)){
-    model_formula_temp <- paste0(DepVar,"~", paste0(IndVarMatrix[RUN,], collapse="*"))
-    model_temp <- lme(as.formula(model_formula_temp)
-                      , data=Data
-                      , random = as.formula(RndForm)
-                      , correlation=corCompSymm(form = as.formula(RndForm))
-                      , control=lmeControl(returnObject=TRUE)
-                      , na.action = na.omit)
-    anova_out_temp <- anova(model_temp)
-    
-    if(length(IndVars)==2){ ## Pulls model output for variable that is last
-      if(RUN==1){ ### This currently works for 
-        anova_partial_temp <- rbind(anova_out_temp[(length(IndVars)+1),],
-                                    anova_out_temp[4,]
-        )
-      }
-      if(RUN %in% 2:length(IndVars)){
-        anova_partial_temp <- anova_out_temp[(length(IndVars)+1),]
-        
-      }
-    } # End if vars == 2 statement
-    anova_out <- rbind(anova_out, anova_partial_temp)
-  } # End reorder loop
-  return(anova_out)
-} # End function
-
-
-
-#repeated measures anova with 3 independent variables
-anova_t3_3ind <- function(IndVars=IndVars, DepVar=DepVar, RndForm=RndForm, Data=Data){
-  anova_out <- {}
-  IndVarMatrix <- matrix(nrow=length(IndVars),ncol=length(IndVars))
-  IndVars2x <- c(IndVars,IndVars)
-  
-  for(REORDER in 1:length(IndVars)){
-    IndVarMatrix[REORDER,] <- IndVars2x[REORDER:(length(IndVars)+(REORDER-1))]
-  }
-  rm(IndVars2x)
-  
-  for(RUN in 1:length(IndVars)){
-    model_formula_temp <- paste0(DepVar,"~", paste0(IndVarMatrix[RUN,], collapse="*"))
-    model_temp <- lme(as.formula(model_formula_temp)
-                      , data=Data
-                      , random = as.formula(RndForm)
-                      , correlation=corCompSymm(form = as.formula(RndForm))
-                      , control=lmeControl(returnObject=TRUE)
-                      , na.action = na.omit)
-    anova_out_temp <- anova(model_temp)
-    
-    if(length(IndVars)==3){ ## Pulls model output for variable that is last
-      if(RUN==1){ ### This currently works for 
-        anova_partial_temp <- rbind(anova_out_temp[(length(IndVars)+1),],
-                                    anova_out_temp[7:8,]
-        )
-      }
-      if(RUN %in% 2:length(IndVars)){
-        anova_partial_temp <- rbind(anova_out_temp[(length(IndVars)+1),],
-                                    anova_out_temp[7,]
-        )
-      }
-    } # End if vars==3 statement
-    
-    if(length(IndVars)==2){ ## Pulls model output for variable that is last
-      if(RUN==1){ ### This currently works for 
-        anova_partial_temp <- rbind(anova_out_temp[(length(IndVars)+1),],
-                                    anova_out_temp[4,]
-        )
-      }
-      if(RUN %in% 2:length(IndVars)){
-        anova_partial_temp <- anova_out_temp[(length(IndVars)+1),]
-        
-      }
-    } # End if vars == 2 statement
-    anova_out <- rbind(anova_out, anova_partial_temp)
-  } # End reorder loop
-  return(anova_out)
-} # End function
-
-anova_t3(IndVars = c("Treatment", "Year"), 
-         DepVar = "OrdCount", 
-         RndForm = "~1 | Block", 
-         Data = Vac_20to21Ord)
-
-
-
-
-####ANTS####
-
-
-Ants21<- Vac_21Clean %>%
-  filter(Order_Family=="Hymenoptera_Formicidae")
-
-Ants20to21<-Vac20to212 %>%
-  filter(Order_Family=="Hymenoptera_Formicidae")
-
-
-AntsFig1<- ggplot(data=Ants20to21, aes(x=Treatment_Year, y=FamCount, fill=Year)) +
-  geom_bar(stat="identity")
-
-AntsFig1
-AntFigData<-Ants20to21 %>%
-  mutate(Block = ifelse(Plot %in% c(1:10), "1", Plot)) %>%
-  mutate(Block= ifelse(Plot %in% c(11:20), "2", Block)) %>%
-  mutate(Block=ifelse(Plot %in% c(21:30), "3", Block))
-
-AntsFigBlock<- lmerTest::lmer(data=AntFigData,FamCount~Treatment+(1|Block))
-AntsFigBlock
-
-AntsFigTYear<- lmerTest::lmer(data=AntFigData,FamCount~Treatment+(1|Treatment_Year))
-AntsFigTYear
-
-AntsFigYear<- lmerTest::lmer(data=AntFigData,FamCount~Treatment+(1|Year))
-AntsFigYear
-
-anova(AntsFigBlock, type=3)
-anova(AntsFigTYear, type=3)
-anova(AntsFigYear, type=3)
-
-
-AIC(AntsFigBlock, AntsFigYear, AntsFigTYear)
-#Lowest number is best fit for data
-
-
-AntsYearTreat<- lmerTest::lmer(data=AntFigData, FamCount~Treatment*Year+(1|Block))
-#Account for both treatment and year, accounting for variability in Block
-anova(AntsYearTreat, type=3)
-
-AIC(AntsYearTreat)
-
-
-####Plant Community Data (Alyssa) and figures (Rachel V) ####
-
-OldPComm21<-read.csv("Dominant Species List 2021 (2).csv") %>%
-  mutate(Treatment = ifelse(Plot %in% c("1", "11", "28"), 'NP', Plot)) %>%
-  mutate(Treatment = ifelse(Plot %in% c("2", "19", "21"), 'PK', Treatment)) %>%
-  mutate(Treatment = ifelse(Plot %in% c("3", "20", "27"), 'C+Shel', Treatment)) %>%
-  mutate(Treatment = ifelse(Plot %in% c("4", "17", "25"), 'K', Treatment)) %>%
-  mutate(Treatment = ifelse(Plot %in% c("10", "16", "22"), 'C', Treatment)) %>%
-  mutate(Treatment = ifelse(Plot %in% c("5", "13", "26"), 'P', Treatment)) %>%
-  mutate(Treatment = ifelse(Plot %in% c("6", "14", "23"), 'NPK+Shel', Treatment)) %>%
-  mutate(Treatment = ifelse(Plot %in% c("7", "12", "24"), 'N', Treatment)) %>%
-  mutate(Treatment = ifelse(Plot %in% c("9", "18", "30"), 'NK', Treatment)) %>%
-  mutate(Treatment = ifelse(Plot %in% c("8", "15", "29"), 'NPK', Treatment))
-group_by(Treatment, Species) %>%
-  mutate(Treat_abundance=sum(cover)) %>%
-  ungroup() %>%
-  mutate(Treat_rank=rank(desc(Treat_abundance)))
-
-rank(OldPComm21$Treat_abundance)
-
-PComm1<-read.csv("PlantComm19to23.csv")%>%
-  mutate(Treatment = ifelse(plot %in% c("1", "11", "28"), 'NP', plot)) %>%
-  mutate(Treatment = ifelse(plot %in% c("2", "19", "21"), 'PK', Treatment)) %>%
-  mutate(Treatment = ifelse(plot %in% c("3", "20", "27"), 'C+Shel', Treatment)) %>%
-  mutate(Treatment = ifelse(plot %in% c("4", "17", "25"), 'K', Treatment)) %>%
-  mutate(Treatment = ifelse(plot %in% c("10", "16", "22"), 'C', Treatment)) %>%
-  mutate(Treatment = ifelse(plot %in% c("5", "13", "26"), 'P', Treatment)) %>%
-  mutate(Treatment = ifelse(plot %in% c("6", "14", "23"), 'NPK+Shel', Treatment)) %>%
-  mutate(Treatment = ifelse(plot %in% c("7", "12", "24"), 'N', Treatment)) %>%
-  mutate(Treatment = ifelse(plot %in% c("9", "18", "30"), 'NK', Treatment)) %>%
-  mutate(Treatment = ifelse(plot %in% c("8", "15", "29"), 'NPK', Treatment)) %>%
-  separate(date, c("Month", "Day", "Year"), remove = TRUE, convert = FALSE) %>%
-  select(site, block, plot, subplot, taxa, Treatment, cover, Year, Month, Day) %>%
-  filter(taxa!="Bare_ground") %>%
-  filter(taxa!="Litter") %>%
-  filter(taxa!="Overstory") %>%
-  filter(taxa!="Unknown_moss") %>%
-  filter(taxa!="Unknown_brown_Unknown_mushroom") %>%
-  filter(taxa!="Unknown_red_Unknown_mushroom") %>%
-  filter(taxa!="Unknown_Unknown_mushroom") %>%
-  filter(taxa!="Unknown_mushroom") %>%
-  filter(taxa!="Moss") %>%
-  filter(taxa!="Rock")
-
-PCommcolorassign<-read.csv("PlantComm19to23.csv")%>%
-  mutate(Treatment = ifelse(plot %in% c("1", "11", "28"), 'NP', plot)) %>%
-  mutate(Treatment = ifelse(plot %in% c("2", "19", "21"), 'PK', Treatment)) %>%
-  mutate(Treatment = ifelse(plot %in% c("3", "20", "27"), 'C+Shel', Treatment)) %>%
-  mutate(Treatment = ifelse(plot %in% c("4", "17", "25"), 'K', Treatment)) %>%
-  mutate(Treatment = ifelse(plot %in% c("10", "16", "22"), 'C', Treatment)) %>%
-  mutate(Treatment = ifelse(plot %in% c("5", "13", "26"), 'P', Treatment)) %>%
-  mutate(Treatment = ifelse(plot %in% c("6", "14", "23"), 'NPK+Shel', Treatment)) %>%
-  mutate(Treatment = ifelse(plot %in% c("7", "12", "24"), 'N', Treatment)) %>%
-  mutate(Treatment = ifelse(plot %in% c("9", "18", "30"), 'NK', Treatment)) %>%
-  mutate(Treatment = ifelse(plot %in% c("8", "15", "29"), 'NPK', Treatment)) %>%
-  separate(date, c("Month", "Day", "Year"), remove = TRUE, convert = FALSE) %>%
-  select(site, block, plot, subplot, taxa, Treatment, cover, Year, Month, Day) %>%
-  filter(taxa!="Bare_ground") %>%
-  filter(taxa!="Litter") %>%
-  filter(taxa!="Overstory") %>%
-  filter(taxa!="Unknown_moss") %>%
-  filter(taxa!="Unknown_brown_Unknown_mushroom") %>%
-  filter(taxa!="Unknown_red_Unknown_mushroom") %>%
-  filter(taxa!="Unknown_Unknown_mushroom") %>%
-  filter(taxa!="Unknown_mushroom") %>%
-  filter(taxa!="Moss") %>%
-  filter(taxa!="Rock") %>%
-  summarize(unique(taxa)) %>%
-  mutate(colors=c("dodgerblue2","#E31A1C","green4","#6A3D9A", "#FF7F00","black", "gold1","skyblue2", "#FB9A99", "palegreen2","hotpink","#FDBF6F","gray70", "khaki2","maroon", "orchid1","seagreen","slategrey", "deeppink1", "blue1", "steelblue4","darkturquoise", "green1", "yellow4","darksalmon", "yellow3","darkcyan","darkorange3", "brown","darkviolet", "mediumblue","lawngreen","deeppink", "ivory","firebrick", "goldenrod","cyan", "grey", "orangered","plum1","darkmagenta","darkgreen", "aquamarine","yellow", "lightcoral", "lightskyblue", "chocolate1", "grey30","chartreuse", "bisque", "sienna4", "cornflowerblue","white", "darkred","seagreen1", "mediumorchid2","burlywood","lightgreen", "grey69","navajowhite2", "indianred", "cadetblue2", "turquoise4","springgreen3","khaki","tomato","purple", "saddlebrown")) %>%
-  mutate(taxa=PCommcolorassign$`unique(taxa)`) %>%
-  select(taxa, colors)
-
-
-PComm<-left_join(PComm1, PCommcolorassign, by="taxa")
-
-
-"Aristida_stricta"                       "Chamaecrista_nictitans"                 "Chrysopsis_mariana"                    
-"Dichanthelium_acuminatum"               "Euphorbia_pubentissima"                 "Lespedeza_hirta"                       
-"Liatris_cokeri"                         "Parthenium_integrifolium_mabryanum"     "Pteridium_aquilinum"                   
-"Symphyotrichum_walteri"                 "Vaccinium_tenellum"                     "Ionactis_linariifolia"                 
-"Pityopsis_aspera"                       "Carphephorus_bellidifolius"             "Desmodium_rotundifolium"               
-"Pinus_palustris"                        "Robinia_hispida_nana"                   "Galactia_regularis"                    
-"Lespedeza_virginica"                    "Scleria_triglomerata"                   "Stylosanthes_biflora"                  
-"Tephrosia_virginiana"                   "Schizachyrium_scoparium_scoparium"      "Dichanthelium_commutatum"              
-"Rhus_copallinum"                        "Solidago_odora"                         "Dichanthelium_laxiflorum"              
-"Eupatorium_rotundifolium_rotundifolium" "Quercus_margarettae"                    "Eupatorium_leucolepis"                 
-"Diospyros_virginiana"                   "Rhexia_alifanus"                        "Morella_cerifera_pumila"               
-"Galactia_erecta"                        "Smilax_glauca"                          "Coreopsis_major_rigida"                
-"Desmodium_strictum"                     "Iris_verna_verna"                       "Lyonia_mariana"                        
-"Seymeria_cassioides"                    "Sericocarpus_asteroides"                "Quercus_incana"                        
-"Quercus_marilandica"                    "Sericocarpus_tortifolius"               "Sassafras_albidum"                     
-"Toxicodendron_pubescens"                "Andropogon_gyrans"                      "Hypericum_gentianoides"                
-"Gentiana_autumnalis"                    "Spiranthes_tuberosa"                    "Symphyotrichum_dumosum_dumosum"        
-"Quercus_laevis"                         "Cirsium_repandum"                       "Hypoxis_wrightii"                      
-"Hieracium_marianum"                     "Andropogon_virginicus"                  "Pinus_taeda"                           
-"Eupatorium_compostifolium"              "Desmodium_ciliare"                      "Lespedeza_procumbens"                  
-"Euphorbia_curtisii"                     "Silphium_compositum_compositum"         "Dichanthelium_scoparium"               
-"Erictities_hieracifolius"               "Lespedeza_repens"                       "Vitis_rotundifolia"                    
-"Dicanthelium_scoparium"                 "Cnidoscolus_stimulosus"             
-
-
-
-
-mutate(colors="dodgerblue2","#E31A1C","green4","#6A3D9A", "#FF7F00","black", "gold1","skyblue2", "#FB9A99", "palegreen2","hotpink","#FDBF6F","gray70", "khaki2","maroon", "orchid1","seagreen","slategrey", "deeppink1", "blue1", "steelblue4","darkturquoise", "green1", "yellow4","darksalmon", "yellow3","darkcyan","darkorange3", "brown","darkviolet", "mediumblue","lawngreen","deeppink", "ivory","firebrick", "goldenrod","cyan", "grey", "orangered","plum1","darkmagenta","darkgreen", "aquamarine","yellow", "lightcoral", "lightskyblue", "chocolate1", "grey30","chartreuse", "bisque", "sienna4", "cornflowerblue","white", "darkred","seagreen1", "mediumorchid2","burlywood","lightgreen", "grey69","navajowhite2", "indianred", "cadetblue2", "turquoise4","springgreen3","khaki","tomato","purple", "saddlebrown","antiquewhite", "olivedrab"))
-
-PComm19<-(data=subset(PComm, Year == "2019"))
-
-PComm20<-(data=subset(PComm, Year == "2020"))
-
-PComm21<-(data=subset(PComm, Year == "2021"))
-
-PComm22<-(data=subset(PComm, Year == "2022"))
-
-PComm23<-(data=subset(PComm, Year == "2023"))
-
-
-
-group_by(Treatment, Species) %>%
-  mutate(Treat_abundance=sum(cover)) %>%
-  ungroup() %>%
-  mutate(Treat_rank=rank(desc(Treat_abundance)))
-
-
-NP=1,11,28
-PK=2,19,21
-C+Shel=3,20,27
-K=4,17,25
-C=10,16,22
-P=5,13,26
-NPK+Shel=6,14,23
-NPK=8,15,29
-N=7,12,24
-NK=9,18,30
-
-
-c25 <- c("dodgerblue2", "#E31A1C", # red
-         "green4",
-         "#6A3D9A", # purple
-         "#FF7F00", # orange
-         "black", "gold1",
-         "skyblue2", "#FB9A99", # lt pink
-         "palegreen2",
-         "#CAB2D6", # lt purple
-         "#FDBF6F", # lt orange
-         "gray70", "khaki2",
-         "maroon", "orchid1", "deeppink1", "blue1", "steelblue4",
-         "darkturquoise", "green1", "yellow4", "yellow3",
-         "darkorange4", "brown")
-
-
-PComm19Graph<- ggplot(data = PComm19, aes(x = Treatment, y = cover, fill = taxa)) + geom_bar(stat="identity")+
-  scale_fill_manual(values=c(PComm19$colors)) + xlab("Pre-treatment") + 
-  ylab("2019 cover")
-PComm19Graph
-
-PComm20Graph2<- ggplot(data = PComm20, aes(x = Treatment, y = cover, fill = taxa)) + geom_bar(stat = "identity",fill=PComm20$colors)+ xlab("Year 1 treatment") + ylab("2020 cover")
-PComm20Graph2
-
-
-PComm20Graph<- ggplot(data = PComm20, aes(x = Treatment, y = cover, fill = taxa)) + geom_bar(stat="identity")+
-  scale_fill_manual(values=c(PComm20$colors)) + xlab("Year 1 treatment") + 
-  ylab("2020 cover")
-PComm20Graph
-
-PComm21Graph<- ggplot(data = PComm21, aes(x = Treatment, y = cover, fill = taxa)) + geom_bar(stat="identity")+
-  scale_fill_manual(values=c(PComm21$colors)) + xlab("Year 2 treatment") + 
-  ylab("2021 cover")
-PComm21Graph
-
-PComm22Graph<- ggplot(data = PComm22, aes(x = Treatment, y = cover, fill = taxa)) + geom_bar(stat="identity")+
-  scale_fill_manual(values=c(PComm22$colors)) + xlab("Year 2 treatment") + 
-  ylab("2022 cover")
-PComm22Graph
-
-PComm23Graph<- ggplot(data = PComm23, aes(x = Treatment, y = cover, fill = taxa)) + geom_bar(stat="identity")+
-  scale_fill_manual(values=c(PComm23$colors)) + xlab("Year 3 treatment") + 
-  ylab("2023 cover")
-PComm23Graph
-
-PCommGraph<- ggplot(data = PComm, aes(x = Treatment, y = cover, fill=taxa)) + geom_bar(stat="identity")+ scale_fill_manual(values =PComm$colors) + xlab("Yearly treatment") + ylab("Total cover")
-PCommGraph
-
-PComm19Graph<-(data=subset(PCommGraph, Year == "2019"))
-
-
-#### NMDS and PerMANOVA ####
-# subset for only 2023 data and only main effects #
-# convert df to wide format to account for pres/abs of all species for each plot #
-# convert back to long format #
-speciescomposition2 <- speciescomposition %>%
-  select(-lifeform,-lifespan)
-MaxlongFormat <- subset(speciescomposition2,year=="2023") %>%
-  group_by(timepoint, block, plot)%>%
-  spread(taxa, cover) %>%
-  gather(taxa, cover, 6:59) %>%
-  # average cover in early and late sampling time points (keep cover for spp in only 1 season) #
-  group_by(block, plot,taxa) %>%
-  reframe(maxtaxacover = max(cover))
-# if spp was absent in plot, give a zero cover #
-MaxlongFormat[is.na(MaxlongFormat)]<-0
-MaxlongFormat2 <- MaxlongFormat %>%
-  full_join(lifeform, by=c("taxa"))
-
-## Plant Species Composition Ordinations and Stats ####
-wide <- merge(MaxlongFormat2, treatments, by=c("block", "plot"))
-wideFormat <- subset(wide, drought!="Drought") %>%
-  group_by(Nutrients,block, plot, lifeform)%>%
-  reframe(maxfunccover = sum(maxtaxacover)) %>%
-  group_by(Nutrients,block, plot)%>%
-  spread(lifeform, maxfunccover)
-MaxwideFormat <- subset(wideFormat, Nutrients=="C_C_C" | Nutrients=="C_C_Potassium" | Nutrients=="C_Phosphorus_C" | Nutrients=="Nitrogen_C_C")
-MaxwideFormat[is.na(MaxwideFormat)]<-0
-Maxord <- MaxwideFormat[,4:ncol(MaxwideFormat)]
-Maxord1<- MaxwideFormat[,1:3]
-Maxord2<- metaMDS(Maxord,distance="bray", k=2, trymax=100)
-MaxNMDS <- data.frame(Maxord1,scores(Maxord2,display="sites")) %>%
-  rename(MaxNMDS1 = NMDS1, MaxNMDS2 = NMDS2)
-
-## PerMANOVA to test for significant differences between centroids (treatments) ##
-# year*nutrients not significant #
-PerMANOVA <- adonis2(formula = MidNperc ~ N + P*(1|block),
-                     data = PlantOrdination22,
-                     permutations = 99,
-                     method = "bray")
-
-Posthoc_NPK<-pairwise.adonis(PlantOrdination22,factors=c(PlantOrdination22$MidNperc, PlantOrdination22$MidKperc, PlantOrdination22$MidPperc), p.adjust.m = "BH")
-Posthoc_NPK
-
-
-
-PlantNut22<-read.csv("NutrientsTP2.csv")%>%
-  filter(drought!="Drought")%>%
-  select(-drought)
-
-PlantCommall<-read.csv("PlantCommunityMetrics.csv")
-PlantComm22<-PlantCommall%>%
-  filter(year=="2022")%>%
-  filter(drought!="Drought")%>%
-  select(-c(drought,year,Maxdomspp2,Early2022domspp2, Mid2022domspp2,treatment))
-
-PlantOrdination22<-left_join(PlantNut22,PlantComm22, by=c("Plot", "N", "P", "K"))
-
-
-# Graphical representation of communities #
-ordination <- PlantOrdination22 %>%
-  group_by(N, P, K, treatment)%>%
-  reframe(sd1=sd(MaxNMDS1), sd2=sd(MaxNMDS2),
-          NMDS1=mean(MaxNMDS1), NMDS2=mean(MaxNMDS2),
-          n=n())%>%
-  mutate(se1=sd1/sqrt(n))%>%
-  mutate(se2=sd2/sqrt(n))
-ggplot(ordination, aes(x=NMDS1, y=NMDS2)) +
-  geom_point(aes(color=treatment),size=5) +
-  geom_errorbar(aes(ymin=NMDS2-se2,ymax=NMDS2+se2))+
-  geom_errorbarh(aes(xmin=NMDS1-se1,xmax=NMDS1+se1))+
-  scale_color_manual(values=c("#D2B48C","#FF0000", "#4876FF", "#9B30FF","#EEC900", "#FF7600", "#00CD66", "#333333"),
-                     labels=c("Control", "Potassium (K)", "Phosphorus (P)", "PK", "Nitrogen (N)", "NK", "NP", "NPK"))
