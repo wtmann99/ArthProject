@@ -605,7 +605,7 @@ TP1Herb22<-read.csv("Mann_Leaf_Damage_Sandhill_Gamelands_2022.csv", na.strings =
 
 TP1Herb22Stretch<- Herb22 %>%
   filter(Timepoint)
-  select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
+select(-Notes, -Date, -Damage.Assesser.s., -Scribe)%>%
   drop_na(Plot) %>%
   group_by(Block, Plot, Treatment, Replicate, Species) %>%
   gather(HerbType, HerbPerc,6:11)%>%
@@ -1644,7 +1644,7 @@ Regtrans<-lmerTest::lmer(data=DamAll_Reg,
                          trans~Year*Species*Nitrogen*Phosphorous*Potassium+ (1|Block)+ (1|Plot:Year))
 Regtrans
 Anova(Regtrans, type=3)
-
+summary(Regtrans)
 
 Regtrans22<-lmerTest::lmer(data=DamAll_Reg22,
                            trans~Species+MaxShannon+MaxRichness+MaxEvar+MaxBPdom+Maxwirecov+Maxgraminoidcov+Maxforbcov+Maxdomspp1+forbbiomass+graminoidbiomass+legumebiomass+litterbiomass+pineneedlebiomass+woodybiomass+ (1|Block)+ (1|Plot:Year))
