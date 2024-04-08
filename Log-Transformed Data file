@@ -134,14 +134,14 @@ summary(model)
 library(performance)
 library(emmeans)
 ##Nuttrans##
-emmeans(Nuttrans, pairwise ~ Nitrogen, adjust="holm")
+emmeans(Nuttrans, pairwise ~ Potassium|Species, adjust="none")
 ### N is definitively herbivorized less than Control in all years
 
-emmeans(Nuttrans, pairwise ~ Species, adjust="holm")
+emmeans(Nuttrans, pairwise ~ Species, adjust="none")
 ### Across all years, Aristida and Pteridium are different from all other species
 ### Pityopsis and Vaccinium are different from both Aristida and Pteridium, but not from each other
 
-emmeans(Nuttrans, pairwise ~ Nitrogen*Phosphorous*Potassium|Species)
+emmeans(Nuttrans, pairwise ~ Nitrogen*Phosphorous*Potassium|Species, adjust="none")
 ### 2020-Aristida different from all, but other species the same
 ### 2021-Aristida different from Pityopsis and Pteridium, not Vaccinium. Pteridium different than Vaccinium and Aristida
 ### 2022-Aristida is different than Pteridium
@@ -214,9 +214,9 @@ summary(model)
 library(emmeans)
 
 ### Marginal Timepoint*All and Species, Significant Species*D*N, Very Significant Timepoint and Timepoint*Species
-emmeans(Droughttrans, pairwise ~ Drought*Nitrogen, adjust="holm")
+emmeans(Droughttrans, pairwise ~ Drought*Nitrogen, adjust="none")
 
-emmeans(Droughttrans, pairwise ~ Drought|Timepoint*Species, adjust="holm")
+emmeans(Droughttrans, pairwise ~ Drought|Timepoint*Species, adjust="none")
 ### Aristida- No difference
 ### Pityopsis- Marginal Pure Control vs D*N, Significant Pure Drought vs Drought*N; D*N low Herbivory vs Pure Control and Drought Control
 ### Pteridium- No difference
@@ -246,12 +246,12 @@ summary(model)
 emmeans(Season, pairwise ~ Potassium, adjust="holm")
 ### Potassium herbivorized less than Control, supports selective feeding hypothesis
 
-emmeans(Season, pairwise ~ Nitrogen*Phosphorous*Potassium|Species*Timepoint, adjust="holm")
+emmeans(Season, pairwise ~ Nitrogen*Phosphorous*Potassium|Species*Timepoint, adjust="none")
 ### All different except Pityopsis-Pteridium and Pteridium-Vaccinium in TP1; Aristida herbivorized more
 ### Aristida-Pteridium, Pityopsis-Pteridium, and Pteridium-Vaccinium are different in TP2; Pteridium herbivorized more
 ### Aristida is different from everything and Pityopsis is different from Pteridium in TP3; Aristida herbivorized less, Pityopsis herbivorized less than Pteridium
 
-emmeans(Season, pairwise ~ Nitrogen*Phosphorous|Species, adjust="holm")
+emmeans(Season, pairwise ~ Nitrogen*Phosphorous|Species, adjust="none")
 ### Only NC-NP are marginally different. NP is herbivorized the most, NC is herbivorized the least
 
 emmeans(Season, pairwise ~ Nitrogen*Phosphorous*Potassium|Species, adjust="holm")
@@ -355,7 +355,7 @@ DamAll_Seasonal<- HerbDam %>%
 Season<-lmerTest::lmer(data=DamAll_Seasonal,
                        totaldam~as.factor(Timepoint)*Nitrogen*Phosphorous*Potassium+ (1|Block))
 Season
-anova(Season, type=3)
+Anova(Season, type=3)
 
 emmeans(Season, pairwise ~ Potassium, adjust="holm")
 emmeans(Season, pairwise ~ Timepoint, adjust="holm")
@@ -521,7 +521,6 @@ AntGraph
 emmeans(Season, pairwise ~ Potassium, adjust="holm")
 emmeans(Season, pairwise ~ Timepoint, adjust="holm")
 emmeans(Season, pairwise ~ Phosphorous, adjust="holm")
-
 
 
 
