@@ -810,14 +810,19 @@ z <- ggplot(DamAll_Nuttrans, aes(Treatment,totaldam)) + geom_col()
 z + facet_grid(Species~Year) +labs(y = "Arthropod Herbivore Damage by Year")
 
 
+PlantSpecies <- c("Ars", "Pia", "Pta", "Vat")
+scale_x_discrete(labels= PlantSpecies)
+
 SpxHerb<-DamAll_Nuttrans %>%
   group_by(Species) %>%
   summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
 spherb <- ggplot(SpxHerb, aes(Species,AverageHerbivory)) + geom_col() + geom_errorbar(aes(x=Species, ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+labs(y = "Herbivore Damage (%)")
-spherb +theme_classic()+theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+spherb +theme_classic()+theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))+ scale_x_discrete(labels= PlantSpecies)
 
-y <- ggplot(DamAll_Nuttrans, aes(Species,totaldam)) + geom_col()
-y + theme_classic()
+
+
+y <- ggplot(DamAll_Nuttrans, aes(Species,trans)) + geom_col()
+y + theme_classic() +theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 
 YrXSp<-DamAll_Nuttrans %>%
   group_by(Year, Species) %>%
@@ -892,7 +897,7 @@ KsXSp2<-ggplot(KXSp, aes(x = Species, y = AverageHerbivory, color = Potassium)) 
   theme_classic()
 
 KbySp<-ggplot(data=KXSp2, aes(x=Species, y=HerbivoreDamage,fill=Potassium)) +
-  geom_boxplot()+ labs(y="Herbivore Damage (%)") + theme_classic() + theme(axis.title.y = element_blank(), axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))+ scale_fill_discrete(name="Nutrient Treatment", breaks=c("C", "K"),labels=c("Control", "Treatment")) 
+  geom_boxplot()+ labs(y="Herbivore Damage (%)") + theme_classic() +theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))+ scale_x_discrete(labels= PlantSpecies)+ scale_fill_discrete(name="Nutrient Treatment", breaks=c("C", "K"),labels=c("Control", "Treatment")) 
 KbySp
 
 NXSp2<-DamAll_Nuttrans %>%
@@ -900,7 +905,7 @@ NXSp2<-DamAll_Nuttrans %>%
   summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam), HerbivoreDamage=(totaldam))
 
 NbySp<-ggplot(data=NXSp2, aes(x=Species, y=HerbivoreDamage,fill=Nitrogen)) +
-  geom_boxplot()+ labs(y="Herbivore Damage (%)") + theme_classic() +theme(legend.position = "none")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+  geom_boxplot()+ labs(y="Herbivore Damage (%)") + theme_classic() +theme(legend.position = "none")+theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))+ scale_x_discrete(labels= PlantSpecies)
 NbySp
 
 PXSp2<-DamAll_Nuttrans %>%
@@ -908,7 +913,7 @@ PXSp2<-DamAll_Nuttrans %>%
   summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam), HerbivoreDamage=(totaldam))
 
 PbySp<-ggplot(data=PXSp2, aes(x=Species, y=HerbivoreDamage, fill=Phosphorous)) +
-  geom_boxplot()+ labs(y="Herbivore Damage by Species")+ theme_classic() +theme(legend.position = "none") + theme(axis.title.y = element_blank(), axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+  geom_boxplot()+ labs(y="Herbivore Damage (%)")+ theme_classic() +theme(legend.position = "none") +theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))+ scale_x_discrete(labels= PlantSpecies)
 PbySp
 
 NbySp+PbySp+KbySp
@@ -1072,10 +1077,9 @@ SpxHerbxTPxDrt<-ggplot(SpxHerbxTP, aes(x = as.numeric(Timepoint), y = AverageHer
   geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
   scale_color_manual(values = cols)+
   theme_classic()+
-  theme(legend.position = c(0.3, 0.8)) +
   labs(x="Season", y = "Herbivore Damage (%)")+
-  scale_fill_discrete(name="Species - Drought-Net Plots")
-SpxHerbxTPxDrt+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+  scale_fill_discrete(name="Species - Drought-Net Plots")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
+SpxHerbxTPxDrt
 
 
 
@@ -1243,6 +1247,9 @@ TPXSp<-DamAll_Seasonal%>%
   summarise(AverageHerbivory=mean(totaldam), se=stderror(totaldam))
 
 cols <- c("#EEA236", "#5CB85C", "#46B8DA", "#9632B8")
+Timepoints <- c("Early", "","Middle","" ,"Late")
+scale_x_discrete(labels= PlantSpecies)
+
 
 TPGXSp<-ggplot(TPXSp, aes(x = as.numeric(Timepoint), y = AverageHerbivory, color = Species)) +
   geom_point() +
@@ -1250,7 +1257,7 @@ TPGXSp<-ggplot(TPXSp, aes(x = as.numeric(Timepoint), y = AverageHerbivory, color
   geom_errorbar(aes(ymin=AverageHerbivory-se, ymax=AverageHerbivory+se), width=.2)+
   scale_color_manual(values = cols)+
   theme_classic()+
-  theme(legend.position = c(0.2, 0.8))
+  labs(x="Season",y="Herbivore Damage (%)")+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 TPGXSp
 #Saved#
 
@@ -1324,7 +1331,7 @@ gramcovGraph<-ggplot(data = DamAll_Reg22, aes(x = Maxgraminoidcov, y = trans)) +
   geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
   labs(x = "Grass Cover",
        y = "Herbivore Damage (log(%))")+
-  theme_classic()
+  theme_classic() +theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 gramcovGraph
 
 modelforbcov <- lm(trans ~ Maxforbcov, data = DamAll_Reg22)
@@ -1334,7 +1341,7 @@ forbcovGraph<-ggplot(data = DamAll_Reg22, aes(x = Maxforbcov, y = trans)) +
   geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
   labs(x = "Forb Cover",
        y = "Herbivore Damage (log(%))")+
-  theme_classic()
+  theme_classic() + theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 forbcovGraph
 
 
@@ -1345,7 +1352,7 @@ grambioGraph<-ggplot(data = DamAll_Reg22, aes(x = graminoidbiomass, y = trans)) 
   geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
   labs(x = "Graminoid Biomass",
        y = "Herbivore Damage (log(%))")+
-  theme_classic()
+  theme_classic() + theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 grambioGraph
 
 
@@ -1356,7 +1363,7 @@ legbioGraph<-ggplot(data = DamAll_Reg22, aes(x = legumebiomass, y = trans)) +
   geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
   labs(x = "Legume Biomass",
        y = "Herbivore Damage (log(%))")+
-  theme_classic()
+  theme_classic() + theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 legbioGraph
 
 
@@ -1367,7 +1374,7 @@ litbioGraph<-ggplot(data = DamAll_Reg22, aes(x = litterbiomass, y = trans)) +
   geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
   labs(x = "Litter Biomass",
        y = "Herbivore Damage (log(%))")+
-  theme_classic()
+  theme_classic() + theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 litbioGraph
 
 
@@ -1378,7 +1385,7 @@ shannGraph<-ggplot(data = DamAll_Reg22, aes(x = MaxShannon, y = trans)) +
   geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
   labs(x = "Shannon Diversity",
        y = "Herbivore Damage (log(%))")+
-  theme_classic()
+  theme_classic()+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 shannGraph
 
 
@@ -1390,9 +1397,12 @@ richGraph<-ggplot(data = DamAll_Reg22, aes(x = MaxRichness, y = trans)) +
   geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color="black") +
   labs(x = "Plant Species Richness",
        y = "Herbivore Damage (log(%))")+
-  theme_classic()
+  theme_classic()+ theme(axis.text = element_text(size = 14),axis.title=element_text(size = 18, face = "bold"))
 richGraph
 
+richGraph+modelgramcov+modelforbcov+modellitbio
+
+library(patchwork)
 
 model<- lm(trans ~ K*Species, data = DamAll_Reg22)
 summary(model)
