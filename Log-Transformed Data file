@@ -370,19 +370,25 @@ BugMetrics22<-BugMetrics%>%
   group_by(Plot, Species)
 PlotWeights22<-PlotWeightsYears%>%
   filter(Year=="2022")
-BugWeights<-left_join(BugMetrics22, Vac22Weight)
+BugWeights<-left_join(BugMetrics, Vac22Weight)
 Vac22Weight$Year<-as.numeric(Vac22Weight$Year)
 
-BugWeight <- BugWeights %>% 
-  ungroup()%>%
-  select(Block, Species, Plot, totaldam, trans, Weight) %>%
+BugWeights<-BugWeights %>%
   filter(Plot!="3")%>%
   filter(Plot!="6") %>%
   filter(Plot!="14") %>%
   filter(Plot!="20")%>%
   filter(Plot!="23") %>%
   filter(Plot!="27")
-BugWeight<-BugWeight[!duplicated(BugWeight[c('Plot')]), ]
+library(dplyr)
+BugWeight <- BugWeights %>%
+  ungroup() %>%
+  select(Block, Plot, Timepoint, trans, totaldam, Weight)
+BugWeight <- dplyr::select(BugWeights, Block, Plot, Timepoint, trans, totaldam, Weight)%>%
+  filter(Weight!=is.na(TRUE))
+
+
+BugWeight<-BugWeight[!duplicated(BugWeight[c('Plot', 'Timepoint')]), ]
 
 modelBugweights <- lm(trans ~ Weight, data = BugWeight)
 summary(modelBugweights)
